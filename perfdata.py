@@ -31,10 +31,14 @@ class Perfdata:
                         check_command = check_command_regex.search(item['check_command'])
                         prometheus_key = 'monitor_' + check_command.group() + '_' + key.lower()
                         prometheus_key = prometheus_key.replace(' ', '_')
+                        prometheus_key = prometheus_key.replace('/', 'slash')
+                        prometheus_key = prometheus_key.replace('%', 'percent')
                         prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
                         self.perfdatadict.update({prometheus_key: str(nested_value)})
         return self.perfdatadict
 
     def prometheus_format(self):
+        metrics = ''
         for key, value in self.perfdatadict.items():
-            print(key + ' ' + value)
+            metrics += key + ' ' + value + '\n'
+        return metrics
