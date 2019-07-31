@@ -17,10 +17,11 @@ class Perfdata:
         return self.perfdata_json
 
     def get_perfdata(self):
+        self.get_data()
+
         perfdict = {}
-
+        
         length = len(self.perfdata_json)
-
         for i in range(length):
             length_perfdata = len(self.perfdata_json[i]['perf_data'])
             perfd = self.perfdata_json[i]['perf_data']
