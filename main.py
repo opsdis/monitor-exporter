@@ -10,6 +10,4 @@ from perfdata import Perfdata
 
 class_test = Perfdata('monitor.aw.oc-testbench.xyz', 'monitor', 'monitor', '[services]%20all&columns=host.name,description,perf_data')
 
-
-#print(json.dumps(class_test.get_data(), indent=4, sort_keys=True))
 print(json.dumps(class_test.get_perfdata(), indent=4, sort_keys=True))
