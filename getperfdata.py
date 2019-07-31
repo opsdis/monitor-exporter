@@ -23,14 +23,18 @@ length = len(y)
 print(length)
 for i in range(length):
     labeldict.update({'hostname': y[i]['host']['name']})
-    #labeldict.update({'service': y[i]['description']})
     lenny = len(y[i]['perf_data'])
     perfd = y[i]['perf_data']
     if lenny != 0:
         print(perfd)
         for k, v in perfd.items():
             print(k)
-            print(v)
+            for nestk, nestv in v.items():
+                newkey = y[i]['description'] + k + '_' + nestk
+                perfdict.update({newkey: nestv})
+                #print(k + '_' + nestk)
+                #print(nestv)
 
-
+print(perfdict)
 print(labeldict)
+#print(json.dumps(y, indent=4, sort_keys=True))
