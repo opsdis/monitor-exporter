@@ -12,26 +12,24 @@ class Perfdata:
         self.query = query
 
     def get_data(self):
-        perfdata_from_monitor = requests.get('https://' + self.url + '/api/filter/query?query=' + self.query, auth=HTTPBasicAuth(self.user, self.password), verify=False, headers={'Content-Type' : 'application/json'})
-        self.perfdata_json = json.loads(perfdata_from_monitor.content)
-        return self.perfdata_json
+        data_from_monitor = requests.get('https://' + self.url + '/api/filter/query?query=' + self.query, auth=HTTPBasicAuth(self.user, self.password), verify=False, headers={'Content-Type' : 'application/json'})
+        self.data_json = json.loads(data_from_monitor.content)
+        return self.data_json
 
     def get_perfdata(self):
         self.get_data()
 
-        perfdict = {}
+        perfdatadict = {}
         
-        length = len(self.perfdata_json)
-        for i in range(length):
-            length_perfdata = len(self.perfdata_json[i]['perf_data'])
-            perfd = self.perfdata_json[i]['perf_data']
-            if length_perfdata != 0:
-                #print(perfd)
-                for k, v in perfd.items():
-                    #print(k)
-                    for nestk, nestv in v.items():
-                        newkey = self.perfdata_json[i]['description'] + '_' + k + '_' + nestk
+        data_length = len(self.data_json)
+        for i in range(data_length):
+            perfdata_length = len(self.data_json[i]['perf_data'])
+            perfdata = self.data_json[i]['perf_data']
+            if perfdata_length != 0:
+                for key, value in perfdata.items():
+                    for nested_key, nested_value in value.items():
+                        newkey = self.data_json[i]['description'] + '_' + key + '_' + nested_key
                         newkey = newkey.replace(' ', '_')
                         newkey = newkey.lower()
-                        perfdict.update({newkey: nestv})
-        return perfdict
+                        perfdatadict.update({newkey: nested_value})
+        return perfdatadict
