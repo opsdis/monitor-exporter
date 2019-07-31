@@ -14,17 +14,21 @@ password = 'monitor'
 query = '[services]%20all&columns=host.name,description,perf_data'
 
 r = requests.get('https://' + url + '/api/filter/query?query=' + query + '', auth=HTTPBasicAuth(user, password), verify=False, headers={'Content-Type' : 'application/json'})
-
 y = json.loads(r.content)
+
+labeldict = {}
 
 length = len(y)
 print(length)
 for i in range(length):
-    print(y[i]['host']['name'])
-    print(y[i]['description'])
+    #print(y[i]['host']['name'])
+    labeldict.update({'hostname': y[i]['host']['name']})
+    #print(y[i]['description'])
+    labeldict.update({'service': y[i]['description']})
     lenny = len(y[i]['perf_data'])
     print(lenny)
     for ds in range(lenny):
         if ds != 0:
             print(y[i]['perf_data'])
 
+print(labeldict)
