@@ -1,4 +1,4 @@
-import requests, urllib3, json
+import requests, urllib3, json, re
 from requests.auth import HTTPBasicAuth
 
 # Disable InsecureRequestWarning
@@ -20,7 +20,7 @@ class Perfdata:
         self.get_data()
 
         perfdatadict = {}
-        
+
         data_length = len(self.data_json)
         for i in range(data_length):
             perfdata_length = len(self.data_json[i]['perf_data'])
@@ -28,8 +28,13 @@ class Perfdata:
             if perfdata_length != 0:
                 for key, value in perfdata.items():
                     for nested_key, nested_value in value.items():
-                        newkey = self.data_json[i]['description'] + '_' + key + '_' + nested_key
-                        newkey = newkey.replace(' ', '_')
-                        newkey = newkey.lower()
-                        perfdatadict.update({newkey: nested_value})
+                        if nested_key.endswith('value'):
+                            newkey = self.data_json[i]['description'] + '_' + key + '_' + nested_key
+                            newkey = newkey.replace(' ', '_')
+                            newkey = newkey.lower()
+                            perfdatadict.update({newkey: str(nested_value)})
         return perfdatadict
+
+#testhost = self.data_json[i]['host']['name']
+#perfdatadict[testhost]
+       # perfdatadict.update({'hostname': self.data_json[i]['host']['name']})
