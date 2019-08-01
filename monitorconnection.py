@@ -18,9 +18,9 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import yaml
+import yaml, logging
 
-class MonitorConnection:
+class MonitorConfig:
 
     def __init__(self):
         with open("config.yml", 'r') as ymlfile:
@@ -31,7 +31,8 @@ class MonitorConnection:
         self.headers = {'content-type': 'application/json'}
         self.verify = False
         self.retries = 5
-        
+        self.prefix = monitor['op5monitor']['metric_prefix'] + '_'
+
     def get_user(self):
         return self.user
 
@@ -49,3 +50,6 @@ class MonitorConnection:
 
     def number_of_retries(self):
         return self.retries
+    
+    def get_prefix(self):
+        return self.prefix

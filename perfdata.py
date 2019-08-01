@@ -1,4 +1,4 @@
-import requests, urllib3, json, re
+import requests, urllib3, json, re, logging
 import monitorconnection
 from requests.auth import HTTPBasicAuth
 
@@ -7,7 +7,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Perfdata:
     def __init__(self, query_hostname):
-        monitor = monitorconnection.MonitorConnection()
+        monitor = monitorconnection.MonitorConfig()
         self.url = 'https://' + monitor.get_host() + '/api/filter/query?query=[services]%20host.name="' + query_hostname + '"&columns=host.name,description,perf_data,check_command'
         self.user = monitor.get_user()
         self.passwd = monitor.get_passwd()
@@ -15,9 +15,11 @@ class Perfdata:
     def _get_data(self):
         data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
         self.data_json = json.loads(data_from_monitor.content)
+        logging.info('Getting data from Monitor. Status code: ' + str(data_from_monitor.status_code))         
         return self.data_json
 
     def get_perfdata(self):
+        monitor = monitorconnection.MonitorConfig()
         self._get_data()
         self.perfdatadict = {}
         check_command_regex = re.compile(r'^.+?[^!\n]+')
@@ -45,7 +47,7 @@ class Perfdata:
                 for nested_key, nested_value in value.items():
                     if nested_key == 'value':
                         check_command = check_command_regex.search(item['check_command'])
-                        prometheus_key = 'monitor_' + check_command.group() + '_' + key.lower()
+                        prometheus_key = monitor.get_prefix() + check_command.group() + '_' + key.lower()
                         prometheus_key = prometheus_key.replace(' ', '_')
                         prometheus_key = prometheus_key.replace('/', 'slash')
                         prometheus_key = prometheus_key.replace('%', 'percent')
