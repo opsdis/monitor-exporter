@@ -1,0 +1,4 @@
+op5monitor:
+  host: monitor.aw.oc-testbench.xyz
+  user: monitor
+  passwd: monitor

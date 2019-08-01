@@ -15,7 +15,7 @@ def get_metrics():
     print(request)
     target = request.args.get('target')
     print(target)
-    class_test = Perfdata('monitor.aw.oc-testbench.xyz', 'monitor', 'monitor', target)
+    class_test = Perfdata(target)
 
     # Fetch performance data from Monitor
     class_test.get_perfdata()

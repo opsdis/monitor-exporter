@@ -6,14 +6,19 @@
 """
 import json
 from perfdata import Perfdata
+import monitorconnection
+
+
+p = monitorconnection.MonitorConnection()
+print(p.get_auth())
 
 # Create new Perfdata object
-class_test = Perfdata('monitor.aw.oc-testbench.xyz', 'monitor', 'monitor', 'monitor')
+#class_test = Perfdata('monitor.aw.oc-testbench.xyz', 'monitor', 'monitor', 'monitor')
 
 # Fetch performance data from Monitor
 #print(class_test.get_perfdata())
 
-print(json.dumps(class_test.get_perfdata(), indent=4, sort_keys=True))
+#print(json.dumps(class_test.get_perfdata(), indent=4, sort_keys=True))
 
 #Print in prometheus format
 #print(class_test.prometheus_format())

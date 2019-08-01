@@ -1,17 +1,19 @@
 import requests, urllib3, json, re
+import monitorconnection
 from requests.auth import HTTPBasicAuth
 
 # Disable InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Perfdata:
-    def __init__(self, monitor_address, user, password, query_hostname):
-        self.url = 'https://' + monitor_address + '/api/filter/query?query=[services]%20host.name="' + query_hostname + '"&columns=host.name,description,perf_data,check_command'
-        self.user = user
-        self.password = password
+    def __init__(self, query_hostname):
+        monitor = monitorconnection.MonitorConnection()
+        self.url = 'https://' + monitor.get_host() + '/api/filter/query?query=[services]%20host.name="' + query_hostname + '"&columns=host.name,description,perf_data,check_command'
+        self.user = monitor.get_user()
+        self.passwd = monitor.get_passwd()
 
     def _get_data(self):
-        data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.password), verify=False, headers={'Content-Type' : 'application/json'})
+        data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
         self.data_json = json.loads(data_from_monitor.content)
         return self.data_json
 
