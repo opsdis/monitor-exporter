@@ -1,4 +1,5 @@
-import requests, urllib3, json, re, logging
+import requests, urllib3, json, re
+from exporterlog import ExporterLog
 import monitorconnection
 from requests.auth import HTTPBasicAuth
 
@@ -15,7 +16,9 @@ class Perfdata:
     def _get_data(self):
         data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
         self.data_json = json.loads(data_from_monitor.content)
-        logging.info('Getting data from Monitor. Status code: ' + str(data_from_monitor.status_code))         
+        ExporterLog.info('API call: ' + data_from_monitor.url)
+        ExporterLog.info('Status: ' + str(data_from_monitor.status_code))
+        ExporterLog.info('Time for request: ' + str(data_from_monitor.elapsed))
         return self.data_json
 
     def get_perfdata(self):

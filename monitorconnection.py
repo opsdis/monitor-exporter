@@ -18,7 +18,7 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import yaml, logging
+import yaml, exporterlog
 
 class MonitorConfig:
 
