@@ -27,12 +27,24 @@ class Perfdata:
                 perfdata = item['perf_data']
             for key, value in perfdata.items():
                 for nested_key, nested_value in value.items():
+                    
+                    if nested_key == 'unit' and nested_value == 'ms':
+                        value['value'] = value['value'] / 1000.0
+                        key = key + '_seconds'
+
+                    if nested_key == 'unit' and nested_value == '%':
+                        value['value'] = value['value'] / 100.0
+                        key = key + '_ratio'
+
+                for nested_key, nested_value in value.items():
                     if nested_key == 'value':
                         check_command = check_command_regex.search(item['check_command'])
                         prometheus_key = 'monitor_' + check_command.group() + '_' + key.lower()
                         prometheus_key = prometheus_key.replace(' ', '_')
                         prometheus_key = prometheus_key.replace('/', 'slash')
                         prometheus_key = prometheus_key.replace('%', 'percent')
+
+
                         prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
                         self.perfdatadict.update({prometheus_key: str(nested_value)})
         return self.perfdatadict
