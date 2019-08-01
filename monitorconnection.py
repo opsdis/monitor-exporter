@@ -32,6 +32,7 @@ class MonitorConfig:
         self.verify = False
         self.retries = 5
         self.prefix = monitor['op5monitor']['metric_prefix'] + '_'
+        self.labels = monitor['op5monitor']['custom_vars']
 
     def get_user(self):
         return self.user
@@ -53,3 +54,11 @@ class MonitorConfig:
     
     def get_prefix(self):
         return self.prefix
+    
+    def get_labels(self):
+        labeldict = {}
+        for label in self.labels:
+            for custom_var, value in label.items():
+                for key, prom_label in value.items():
+                    labeldict.update({custom_var: prom_label})
+        return labeldict

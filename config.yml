@@ -3,3 +3,8 @@ op5monitor:
   user: monitor
   passwd: monitor
   metric_prefix: monitor
+  custom_vars:
+    - env:
+        label_name: environment
+    - site:
+        label_name: site_
