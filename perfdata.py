@@ -17,8 +17,12 @@ class Perfdata:
         data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
         self.data_json = json.loads(data_from_monitor.content)
         ExporterLog.info('API call: ' + data_from_monitor.url)
-        ExporterLog.info('Status: ' + str(data_from_monitor.status_code))
-        ExporterLog.info('Time for request: ' + str(data_from_monitor.elapsed))
+        ExporterLog.info('Status code: ' + str(data_from_monitor.status_code))
+        ExporterLog.info('Elapsed time: ' + str(data_from_monitor.elapsed))
+        if len(data_from_monitor.content) > 2:
+            ExporterLog.info('Received perfdata from Monitor')
+        else:
+            ExporterLog.error('Received no perfdata from Monitor')
         return self.data_json
 
     def get_perfdata(self):
