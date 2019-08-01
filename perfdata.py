@@ -17,24 +17,28 @@ class Perfdata:
 
     def get_perfdata(self):
         self._get_data()
-
         self.perfdatadict = {}
-
         check_command_regex = re.compile(r'^.+?[^!\n]+')
-       
+
         for item in self.data_json:
             if 'perf_data' in item and item['perf_data'] != []:
                 perfdata = item['perf_data']
+
             for key, value in perfdata.items():
                 for nested_key, nested_value in value.items():
-                    
                     if nested_key == 'unit' and nested_value == 'ms':
                         value['value'] = value['value'] / 1000.0
+                        key = key + '_seconds'
+
+                    if nested_key == 'unit' and nested_value == 's':
                         key = key + '_seconds'
 
                     if nested_key == 'unit' and nested_value == '%':
                         value['value'] = value['value'] / 100.0
                         key = key + '_ratio'
+
+                    if nested_key == 'unit' and nested_value == 'B':
+                        key = key + '_bytes'
 
                 for nested_key, nested_value in value.items():
                     if nested_key == 'value':
@@ -43,14 +47,14 @@ class Perfdata:
                         prometheus_key = prometheus_key.replace(' ', '_')
                         prometheus_key = prometheus_key.replace('/', 'slash')
                         prometheus_key = prometheus_key.replace('%', 'percent')
-
-
                         prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
                         self.perfdatadict.update({prometheus_key: str(nested_value)})
+
         return self.perfdatadict
 
     def prometheus_format(self):
         metrics = ''
         for key, value in self.perfdatadict.items():
             metrics += key + ' ' + value + '\n'
+
         return metrics
