@@ -33,6 +33,8 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Perfdata:
     def __init__(self, query_hostname):
+        # Get Monitor configuration and build URL
+
         monitor = monitorconnection.MonitorConfig()
         self.query_hostname = query_hostname
         self.host = monitor.get_host()
@@ -43,6 +45,8 @@ class Perfdata:
         self.url = 'https://' + self.host + '/api/filter/query?query=[services]%20host.name="' + self.query_hostname + '"&columns=host.name,description,perf_data,check_command'
 
     def _get_data(self):
+        # Get performance data from Monitor and return in json format
+
         data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
         self.data_json = json.loads(data_from_monitor.content)
 
@@ -64,6 +68,8 @@ class Perfdata:
         return self.data_json
 
     def get_custom_vars(self):
+        # Build new URL and get custom_vars from Monitor
+
         url = 'https://' + self.host + '/api/filter/query?query=[hosts]%20display_name="' + self.query_hostname + '"&columns=custom_variables'
         custom_vars_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
         custom_vars_json = json.loads(custom_vars_from_monitor.content)
@@ -75,21 +81,29 @@ class Perfdata:
         return self.custom_vars
 
     def get_perfdata(self):
+        # Use _get_data method to fetch performance data from Monitor
         self._get_data()
         
+        # Use prometheus_labels method to fetch extra labels
         new_labels = self.prometheus_labels()
 
         self.perfdatadict = {}
         check_command_regex = re.compile(r'^.+?[^!\n]+')
 
+        # Select items that has performance data and skip items that doesn't
         for item in self.data_json:
             if 'perf_data' in item and item['perf_data']:
                 perfdata = item['perf_data']
 
+            # Go over each perf_data item and construct prometheus metrics
             for key, value in perfdata.items():
                 for nested_key, nested_value in value.items():
+
+                    # Use to_base_units method to convert millisecond to second etc
                     key = self.to_base_units(nested_key, nested_value, value, key)
 
+                # Create a new dictionary with prometheus metric names and values
+                # Using rem_illegal_chars method to remove illegal characters
                 for nested_key, nested_value in value.items():
                     if nested_key == 'value':
                         check_command = check_command_regex.search(item['check_command'])
@@ -101,8 +115,14 @@ class Perfdata:
         return self.perfdatadict
 
     def add_labels(self, new_labels, prometheus_key, item):
+        # Build metric labels
+
+        # If host does not have any custom_vars add only default labels, i.e. hostname and service
         if not new_labels:
             prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
+
+        # Else if host has custom_vars loop through and select custom_vars based on config.yml, skip custom_vars that are not defined in config.yml
+        # Rename custom_vars according to config.yml
         else:
             labelstring = ''
             for label_key, label_value in new_labels.items():
@@ -111,6 +131,7 @@ class Perfdata:
         return prometheus_key
 
     def rem_illegal_chars(self, prometheus_key):
+        # Replace illegal characters in metric name
         prometheus_key = prometheus_key.replace(' ', '_')
         prometheus_key = prometheus_key.replace('-', '_')
         prometheus_key = prometheus_key.replace('/', 'slash')
@@ -118,6 +139,7 @@ class Perfdata:
         return prometheus_key
 
     def to_base_units(self, nested_key, nested_value, value, key):
+        # Convert metric value to base units, i.e from milliseconds to seconds etc and add unit to metric name 
         if nested_value == 'ms':
             value['value'] = value['value'] / 1000.0
             key += '_seconds'
@@ -134,6 +156,7 @@ class Perfdata:
         return key
 
     def prometheus_labels(self):
+        # Extract metric labels from custom_vars
         monitor_custom_vars = self.get_custom_vars()
         new_labels = {}
 
@@ -145,6 +168,7 @@ class Perfdata:
         return new_labels
 
     def prometheus_format(self):
+        # Build prometheus formatted data
         metrics = ''
         for key, value in self.perfdatadict.items():
             metrics += key + ' ' + value + '\n'
