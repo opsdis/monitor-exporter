@@ -38,6 +38,8 @@ class Perfdata:
         self.host = monitor.get_host()
         self.user = monitor.get_user()
         self.passwd = monitor.get_passwd()
+        self.prefix = monitor.get_prefix()
+        self.labels = monitor.get_labels()
         self.url = 'https://' + self.host + '/api/filter/query?query=[services]%20host.name="' + self.query_hostname + '"&columns=host.name,description,perf_data,check_command'
 
     def _get_data(self):
@@ -91,10 +93,9 @@ class Perfdata:
                 for nested_key, nested_value in value.items():
                     if nested_key == 'value':
                         check_command = check_command_regex.search(item['check_command'])
-                        prometheus_key = monitorconnection.MonitorConfig().get_prefix() + check_command.group() + '_' + key.lower()
+                        prometheus_key = self.prefix + check_command.group() + '_' + key.lower()
                         prometheus_key = self.rem_illegal_chars(prometheus_key)
                         prometheus_key = self.add_labels(new_labels, prometheus_key, item)
-
                         self.perfdatadict.update({prometheus_key: str(nested_value)})
 
         return self.perfdatadict
@@ -132,22 +133,18 @@ class Perfdata:
         return key
 
     def prometheus_labels(self):
-        labels = monitorconnection.MonitorConfig().get_labels()
         monitor_custom_vars = self.get_custom_vars()
         new_labels = {}
 
         if monitor_custom_vars:
             monitor_custom_vars = {k.lower(): v for k, v in monitor_custom_vars.items()}
-            for i in labels.keys():
+            for i in self.labels.keys():
                 if i in monitor_custom_vars.keys():
-                    new_labels.update({labels[i]: monitor_custom_vars[i]})
-
+                    new_labels.update({self.labels[i]: monitor_custom_vars[i]})
         return new_labels
 
     def prometheus_format(self):
         metrics = ''
-
         for key, value in self.perfdatadict.items():
             metrics += key + ' ' + value + '\n'
-
         return metrics
