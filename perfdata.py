@@ -55,8 +55,9 @@ class Perfdata:
         
         labels = monitor.get_labels()
         monitor_custom_vars = Perfdata(self.query_hostname).get_custom_vars()
+
         new_labels = {}
-        if len(monitor_custom_vars) > 0:
+        if monitor_custom_vars:
             monitor_custom_vars = {k.lower(): v for k, v in monitor_custom_vars.items()}
             for i in labels.keys():
                 if i in monitor_custom_vars.keys():
@@ -73,17 +74,17 @@ class Perfdata:
                 for nested_key, nested_value in value.items():
                     if nested_key == 'unit' and nested_value == 'ms':
                         value['value'] = value['value'] / 1000.0
-                        key = key + '_seconds'
+                        key += '_seconds'
 
                     if nested_key == 'unit' and nested_value == 's':
-                        key = key + '_seconds'
+                        key += '_seconds'
 
                     if nested_key == 'unit' and nested_value == '%':
                         value['value'] = value['value'] / 100.0
-                        key = key + '_ratio'
+                        key += '_ratio'
 
                     if nested_key == 'unit' and nested_value == 'B':
-                        key = key + '_bytes'
+                        key += '_bytes'
 
                 for nested_key, nested_value in value.items():
                     if nested_key == 'value':
@@ -92,7 +93,7 @@ class Perfdata:
                         prometheus_key = prometheus_key.replace(' ', '_')
                         prometheus_key = prometheus_key.replace('/', 'slash')
                         prometheus_key = prometheus_key.replace('%', 'percent')
-                        if new_labels == None:
+                        if not new_labels:
                             prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
                         else:
                             labelstring = ''
