@@ -1,7 +1,32 @@
-import requests, urllib3, json, re
-from exporterlog import ExporterLog
-import monitorconnection
+# -*- coding: utf-8 -*-
+"""
+    Copyright (C) 2019  Opsdis AB
+
+    This file is part of monitor-exporter.
+
+    monitor-exporter is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    monitor-exporter is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+import json
+import re
+
+import requests
+import urllib3
 from requests.auth import HTTPBasicAuth
+
+import monitorconnection
+from exporterlog import ExporterLog
 
 # Disable InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -13,7 +38,6 @@ class Perfdata:
         self.url = 'https://' + monitor.get_host() + '/api/filter/query?query=[services]%20host.name="' + self.query_hostname + '"&columns=host.name,description,perf_data,check_command'
         self.user = monitor.get_user()
         self.passwd = monitor.get_passwd()
-
 
     def get_custom_vars(self):
         monitor = monitorconnection.MonitorConfig()
@@ -50,24 +74,15 @@ class Perfdata:
         return self.data_json
 
     def get_perfdata(self):
-        monitor = monitorconnection.MonitorConfig()
         self._get_data()
         
-        labels = monitor.get_labels()
-        monitor_custom_vars = Perfdata(self.query_hostname).get_custom_vars()
-
-        new_labels = {}
-        if monitor_custom_vars:
-            monitor_custom_vars = {k.lower(): v for k, v in monitor_custom_vars.items()}
-            for i in labels.keys():
-                if i in monitor_custom_vars.keys():
-                    new_labels.update({labels[i]: monitor_custom_vars[i]})
+        new_labels = self.prometheus_labels()
 
         self.perfdatadict = {}
         check_command_regex = re.compile(r'^.+?[^!\n]+')
 
         for item in self.data_json:
-            if 'perf_data' in item and item['perf_data'] != []:
+            if 'perf_data' in item and item['perf_data']:
                 perfdata = item['perf_data']
 
             for key, value in perfdata.items():
@@ -89,7 +104,7 @@ class Perfdata:
                 for nested_key, nested_value in value.items():
                     if nested_key == 'value':
                         check_command = check_command_regex.search(item['check_command'])
-                        prometheus_key = monitor.get_prefix() + check_command.group() + '_' + key.lower()
+                        prometheus_key = monitorconnection.MonitorConfig().get_prefix() + check_command.group() + '_' + key.lower()
                         prometheus_key = prometheus_key.replace(' ', '_')
                         prometheus_key = prometheus_key.replace('/', 'slash')
                         prometheus_key = prometheus_key.replace('%', 'percent')
@@ -104,6 +119,18 @@ class Perfdata:
                         self.perfdatadict.update({prometheus_key: str(nested_value)})
 
         return self.perfdatadict
+
+    def prometheus_labels(self):
+        labels = monitorconnection.MonitorConfig().get_labels()
+        monitor_custom_vars = Perfdata(self.query_hostname).get_custom_vars()
+
+        new_labels = {}
+        if monitor_custom_vars:
+            monitor_custom_vars = {k.lower(): v for k, v in monitor_custom_vars.items()}
+            for i in labels.keys():
+                if i in monitor_custom_vars.keys():
+                    new_labels.update({labels[i]: monitor_custom_vars[i]})
+        return new_labels
 
     def prometheus_format(self):
         metrics = ''

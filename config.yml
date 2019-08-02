@@ -7,4 +7,4 @@ op5monitor:
     - env:
         label_name: environment
     - site:
-        label_name: site_
+        label_name: dc

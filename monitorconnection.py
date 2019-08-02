@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    Copyright (C) 2018  Opsdis AB
+    Copyright (C) 2019  Opsdis AB
 
     This file is part of monitor-exporter.
 
@@ -18,7 +18,9 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import yaml, exporterlog
+import yaml
+
+import exporterlog
 
 class MonitorConfig:
 
