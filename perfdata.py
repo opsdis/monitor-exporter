@@ -35,22 +35,10 @@ class Perfdata:
     def __init__(self, query_hostname):
         monitor = monitorconnection.MonitorConfig()
         self.query_hostname = query_hostname
-        self.url = 'https://' + monitor.get_host() + '/api/filter/query?query=[services]%20host.name="' + self.query_hostname + '"&columns=host.name,description,perf_data,check_command'
+        self.host = monitor.get_host()
         self.user = monitor.get_user()
         self.passwd = monitor.get_passwd()
-
-    def get_custom_vars(self):
-        monitor = monitorconnection.MonitorConfig()
-        url = 'https://' + monitor.get_host() + '/api/filter/query?query=[hosts]%20display_name="' + self.query_hostname + '"&columns=custom_variables'
-
-        custom_vars_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
-        custom_vars_json = json.loads(custom_vars_from_monitor.content)
-
-        self.custom_vars = {}
-        for var in custom_vars_json:
-            self.custom_vars = var['custom_variables']
-
-        return self.custom_vars
+        self.url = 'https://' + self.host + '/api/filter/query?query=[services]%20host.name="' + self.query_hostname + '"&columns=host.name,description,perf_data,check_command'
 
     def _get_data(self):
         data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
@@ -58,7 +46,7 @@ class Perfdata:
 
         ExporterLog.info('API call: ' + data_from_monitor.url)
 
-        if data_from_monitor.status_code == 401:
+        if data_from_monitor.status_code != 200:
             ExporterLog.error('Status code: ' + str(data_from_monitor.status_code))
             ExporterLog.error(self.data_json['error'])
             ExporterLog.error(self.data_json['full_error'])
@@ -72,6 +60,17 @@ class Perfdata:
         else:
             ExporterLog.error('Received no perfdata from Monitor')
         return self.data_json
+
+    def get_custom_vars(self):
+        url = 'https://' + self.host + '/api/filter/query?query=[hosts]%20display_name="' + self.query_hostname + '"&columns=custom_variables'
+        custom_vars_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
+        custom_vars_json = json.loads(custom_vars_from_monitor.content)
+
+        self.custom_vars = {}
+        for var in custom_vars_json:
+            self.custom_vars = var['custom_variables']
+
+        return self.custom_vars
 
     def get_perfdata(self):
         self._get_data()
@@ -87,19 +86,7 @@ class Perfdata:
 
             for key, value in perfdata.items():
                 for nested_key, nested_value in value.items():
-                    if nested_key == 'unit' and nested_value == 'ms':
-                        value['value'] = value['value'] / 1000.0
-                        key += '_seconds'
-
-                    if nested_key == 'unit' and nested_value == 's':
-                        key += '_seconds'
-
-                    if nested_key == 'unit' and nested_value == '%':
-                        value['value'] = value['value'] / 100.0
-                        key += '_ratio'
-
-                    if nested_key == 'unit' and nested_value == 'B':
-                        key += '_bytes'
+                    key = self.to_base_units(nested_key, nested_value, value, key)
 
                 for nested_key, nested_value in value.items():
                     if nested_key == 'value':
@@ -120,20 +107,38 @@ class Perfdata:
 
         return self.perfdatadict
 
+    def to_base_units(self, nested_key, nested_value, value, key):
+        if nested_value == 'ms':
+            value['value'] = value['value'] / 1000.0
+            key += '_seconds'
+
+        elif nested_value == 's':
+            key += '_seconds'
+
+        elif nested_value == '%':
+            value['value'] = value['value'] / 100.0
+            key += '_ratio'
+
+        elif nested_value == 'B':
+            key += '_bytes'
+        return key
+
     def prometheus_labels(self):
         labels = monitorconnection.MonitorConfig().get_labels()
-        monitor_custom_vars = Perfdata(self.query_hostname).get_custom_vars()
-
+        monitor_custom_vars = self.get_custom_vars()
         new_labels = {}
+
         if monitor_custom_vars:
             monitor_custom_vars = {k.lower(): v for k, v in monitor_custom_vars.items()}
             for i in labels.keys():
                 if i in monitor_custom_vars.keys():
                     new_labels.update({labels[i]: monitor_custom_vars[i]})
+
         return new_labels
 
     def prometheus_format(self):
         metrics = ''
+
         for key, value in self.perfdatadict.items():
             metrics += key + ' ' + value + '\n'
 
