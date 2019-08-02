@@ -92,20 +92,28 @@ class Perfdata:
                     if nested_key == 'value':
                         check_command = check_command_regex.search(item['check_command'])
                         prometheus_key = monitorconnection.MonitorConfig().get_prefix() + check_command.group() + '_' + key.lower()
-                        prometheus_key = prometheus_key.replace(' ', '_')
-                        prometheus_key = prometheus_key.replace('/', 'slash')
-                        prometheus_key = prometheus_key.replace('%', 'percent')
-                        if not new_labels:
-                            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
-                        else:
-                            labelstring = ''
-                            for label_key, label_value in new_labels.items():
-                                labelstring += ', ' + label_key + '="' + label_value + '"'
-                            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"' + labelstring + '}'
+                        prometheus_key = self.rem_illegal_chars(prometheus_key)
+                        prometheus_key = self.add_labels(new_labels, prometheus_key, item)
 
                         self.perfdatadict.update({prometheus_key: str(nested_value)})
 
         return self.perfdatadict
+
+    def add_labels(self, new_labels, prometheus_key, item):
+        if not new_labels:
+            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
+        else:
+            labelstring = ''
+            for label_key, label_value in new_labels.items():
+                labelstring += ', ' + label_key + '="' + label_value + '"'
+            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"' + labelstring + '}'
+        return prometheus_key
+
+    def rem_illegal_chars(self, prometheus_key):
+        prometheus_key = prometheus_key.replace(' ', '_')
+        prometheus_key = prometheus_key.replace('/', 'slash')
+        prometheus_key = prometheus_key.replace('%', 'percent')
+        return prometheus_key
 
     def to_base_units(self, nested_key, nested_value, value, key):
         if nested_value == 'ms':

@@ -51,7 +51,7 @@ def get_metrics():
     resp = app.make_response(target_metrics)
 
     resp.headers['Content-Type'] = CONTENT_TYPE_LATEST
-    # resp.status = 200
+    
     ExporterLog.info(resp)
     return resp
 
