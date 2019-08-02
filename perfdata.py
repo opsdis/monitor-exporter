@@ -112,6 +112,7 @@ class Perfdata:
 
     def rem_illegal_chars(self, prometheus_key):
         prometheus_key = prometheus_key.replace(' ', '_')
+        prometheus_key = prometheus_key.replace('-', '_')
         prometheus_key = prometheus_key.replace('/', 'slash')
         prometheus_key = prometheus_key.replace('%', 'percent')
         return prometheus_key
