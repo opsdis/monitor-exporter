@@ -13,6 +13,8 @@ All configuration is made in the config.yml file.
 
 Example:
 ```
+config.yml
+
 op5monitor:
   host: monitor.aw.oc-testbench.xyz # FQDN or IP to OP5 Monitor server
   user: monitor # Username of a user with permission to access the API
@@ -74,3 +76,8 @@ $ python3 __main__.py -p 9999
 
 ### Troubleshooting
 Application logs can be found in `monitor_exporter.log`.
+
+## To do
+- /health endpoint
+- Service discovery to populate targets based on hostgroup
+- Extend logging
