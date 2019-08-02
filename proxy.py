@@ -22,13 +22,15 @@ import argparse
 import time
 
 from flask import Flask, request
-from prometheus_client import (CONTENT_TYPE_LATEST, CollectorRegistry, Gauge,
-                               Metric, generate_latest)
+from prometheus_client import (CONTENT_TYPE_LATEST, CollectorRegistry, Counter,
+                               Gauge, Metric, generate_latest)
 
 from exporterlog import ExporterLog
 from perfdata import Perfdata
 
 app = Flask(__name__)
+
+c = Counter('requests', 'Total requests to /metrics endpoint')
 
 @app.route('/')
 def hello_world():
@@ -51,8 +53,19 @@ def get_metrics():
     resp = app.make_response(target_metrics)
 
     resp.headers['Content-Type'] = CONTENT_TYPE_LATEST
-    
+
     ExporterLog.info(resp)
+    
+    c.inc()     # Increment by 1
+
+    return resp
+
+@app.route("/health", methods=['GET'])
+def get_health():
+    resp = ('Health endpoint')
+    # Display if connection to configured Monitor is OK
+    # total requests, successful, unsuccessful, response time percentile
+
     return resp
 
 def start():
