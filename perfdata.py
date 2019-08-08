@@ -18,99 +18,52 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import json
 import re
-
-import requests
 import urllib3
-from requests.auth import HTTPBasicAuth
-
-import monitorconnection
-from exporterlog import ExporterLog
+import monitorconnection as Monitor
 
 # Disable InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-class Perfdata:
-    def __init__(self, query_hostname):
-        # Get Monitor configuration and build URL
 
-        monitor = monitorconnection.MonitorConfig()
+class Perfdata:
+    def __init__(self, monitor: Monitor, query_hostname: str):
+        # Get Monitor configuration and build URL
+        self.monitor = monitor
         self.query_hostname = query_hostname
-        self.host = monitor.get_host()
-        self.user = monitor.get_user()
-        self.passwd = monitor.get_passwd()
         self.prefix = monitor.get_prefix()
         self.labels = monitor.get_labels()
-        self.url = 'https://' + self.host + '/api/filter/query?query=[services]%20host.name="' + self.query_hostname + '"&columns=host.name,description,perf_data,check_command'
-
-    def _get_data(self):
-        # Get performance data from Monitor and return in json format
-
-        data_from_monitor = requests.get(self.url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
-        self.data_json = json.loads(data_from_monitor.content)
-
-        ExporterLog.info('API call: ' + data_from_monitor.url)
-
-        if data_from_monitor.status_code != 200:
-            ExporterLog.error('Status code: ' + str(data_from_monitor.status_code))
-            ExporterLog.error(self.data_json['error'])
-            ExporterLog.error(self.data_json['full_error'])
-        else:
-            ExporterLog.info('Status code: ' + str(data_from_monitor.status_code))
-
-        ExporterLog.info('Elapsed time: ' + str(data_from_monitor.elapsed))
-
-        if len(data_from_monitor.content) > 2:
-            ExporterLog.info('Received perfdata from Monitor')
-        else:
-            ExporterLog.error('Received no perfdata from Monitor')
-        return self.data_json
-
-    def get_custom_vars(self):
-        # Build new URL and get custom_vars from Monitor
-
-        url = 'https://' + self.host + '/api/filter/query?query=[hosts]%20display_name="' + self.query_hostname + '"&columns=custom_variables'
-        custom_vars_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd), verify=False, headers={'Content-Type': 'application/json'})
-        custom_vars_json = json.loads(custom_vars_from_monitor.content)
-
-        self.custom_vars = {}
-        for var in custom_vars_json:
-            self.custom_vars = var['custom_variables']
-
-        return self.custom_vars
+        self.perfdatadict = {}
 
     def get_perfdata(self):
         # Use _get_data method to fetch performance data from Monitor
-        self._get_data()
-        
+        data_json = self.monitor.get_perfdata(self.query_hostname)
+
         # Use prometheus_labels method to fetch extra labels
         new_labels = self.prometheus_labels()
 
-        self.perfdatadict = {}
         check_command_regex = re.compile(r'^.+?[^!\n]+')
 
         # Select items that has performance data and skip items that doesn't
-        for item in self.data_json:
+        for item in data_json:
             if 'perf_data' in item and item['perf_data']:
                 perfdata = item['perf_data']
 
-            # Go over each perf_data item and construct prometheus metrics
-            for key, value in perfdata.items():
-                for nested_key, nested_value in value.items():
+                # Go over each perf_data item and construct prometheus metrics
+                for key, value in perfdata.items():
+                    for nested_key, nested_value in value.items():
+                        # Use to_base_units method to convert millisecond to second etc
+                        key = self.to_base_units(nested_key, nested_value, value, key)
 
-                    # Use to_base_units method to convert millisecond to second etc
-                    key = self.to_base_units(nested_key, nested_value, value, key)
-
-                # Create a new dictionary with prometheus metric names and values
-                # Using rem_illegal_chars method to remove illegal characters
-                for nested_key, nested_value in value.items():
-                    if nested_key == 'value':
-                        check_command = check_command_regex.search(item['check_command'])
-                        prometheus_key = self.prefix + check_command.group() + '_' + key.lower()
-                        prometheus_key = self.rem_illegal_chars(prometheus_key)
-                        prometheus_key = self.add_labels(new_labels, prometheus_key, item)
-                        self.perfdatadict.update({prometheus_key: str(nested_value)})
+                    # Create a new dictionary with prometheus metric names and values
+                    # Using rem_illegal_chars method to remove illegal characters
+                    for nested_key, nested_value in value.items():
+                        if nested_key == 'value':
+                            check_command = check_command_regex.search(item['check_command'])
+                            prometheus_key = self.prefix + check_command.group() + '_' + key.lower()
+                            prometheus_key = self.rem_illegal_chars(prometheus_key)
+                            prometheus_key = self.add_labels(new_labels, prometheus_key, item)
+                            self.perfdatadict.update({prometheus_key: str(nested_value)})
 
         return self.perfdatadict
 
@@ -119,15 +72,18 @@ class Perfdata:
 
         # If host does not have any custom_vars add only default labels, i.e. hostname and service
         if not new_labels:
-            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"}'
+            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item[
+                'description'] + '"}'
 
-        # Else if host has custom_vars loop through and select custom_vars based on config.yml, skip custom_vars that are not defined in config.yml
+        # Else if host has custom_vars loop through and select custom_vars based on config.yml,
+        # skip custom_vars that are not defined in config.yml
         # Rename custom_vars according to config.yml
         else:
             labelstring = ''
             for label_key, label_value in new_labels.items():
                 labelstring += ', ' + label_key + '="' + label_value + '"'
-            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item['description'] + '"' + labelstring + '}'
+            prometheus_key = prometheus_key + '{hostname="' + item['host']['name'] + '"' + ', service="' + item[
+                'description'] + '"' + labelstring + '}'
         return prometheus_key
 
     def rem_illegal_chars(self, prometheus_key):
@@ -157,7 +113,7 @@ class Perfdata:
 
     def prometheus_labels(self):
         # Extract metric labels from custom_vars
-        monitor_custom_vars = self.get_custom_vars()
+        monitor_custom_vars = self.monitor.get_custom_vars(self.query_hostname)
         new_labels = {}
 
         if monitor_custom_vars:

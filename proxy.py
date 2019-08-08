@@ -19,58 +19,93 @@
 
 """
 import argparse
-import time
+import log
+import yaml
 
-from flask import Flask, request
-from prometheus_client import (CONTENT_TYPE_LATEST, CollectorRegistry, Counter,
-                               Gauge, Metric, generate_latest)
+from flask import Flask, request, Response, jsonify
+from prometheus_client import (CONTENT_TYPE_LATEST, Counter)
 
-from exporterlog import ExporterLog
 from perfdata import Perfdata
+import monitorconnection
 
 app = Flask(__name__)
 
-c = Counter('requests', 'Total requests to /metrics endpoint')
+total_requests = Counter('requests', 'Total requests to monitor-exporter endpoint')
+
 
 @app.route('/')
 def hello_world():
-    return 'Hello, World!'
+    return 'monitor-exporter alive'
+
 
 @app.route("/metrics", methods=['GET'])
 def get_metrics():
-    ExporterLog.info(request)
+    log.info(request.url)
     target = request.args.get('target')
-    
-    ExporterLog.info('Getting metrics for: ' + target)
 
-    monitor_data = Perfdata(target)
+    log.info('Collect metrics', {'target': target})
+
+    monitor_data = Perfdata(monitorconnection.MonitorConfig(), target)
 
     # Fetch performance data from Monitor
     monitor_data.get_perfdata()
 
     target_metrics = monitor_data.prometheus_format()
-    
+
     resp = app.make_response(target_metrics)
 
     resp.headers['Content-Type'] = CONTENT_TYPE_LATEST
 
-    ExporterLog.info(resp)
-    
-    c.inc()     # Increment by 1
-
     return resp
+
 
 @app.route("/health", methods=['GET'])
 def get_health():
-    resp = ('Health endpoint')
-    # Display if connection to configured Monitor is OK
-    # total requests, successful, unsuccessful, response time percentile
+    return chech_healthy()
 
+
+@app.after_request
+def after_request_func(response):
+    total_requests.inc()
+
+    call_status = {'remote_addr': request.remote_addr, 'url': request.url, 'user_agent': request.user_agent,
+                   'content_length': response.content_length, 'status': response.status_code}
+    log.info('Access', call_status)
+
+    return response
+
+
+def chech_healthy() -> Response:
+    resp = jsonify({'status': 'ok'})
+    resp.status_code = 200
     return resp
 
+
+def read_config(config_file: str) -> dict:
+    """
+    Read configuration file
+    :param config_file:
+    :return:
+    """
+    config = {}
+    try:
+        ymlfile = open(config_file, 'r')
+        config = yaml.load(ymlfile, Loader=yaml.SafeLoader)
+    except (FileNotFoundError, IOError):
+        print("Config file {} not found".format(config_file))
+        exit(1)
+    except (yaml.YAMLError, yaml.MarkedYAMLError) as err:
+        print("Error will reading config file - {}".format(err))
+        exit(1)
+
+    return config
+
+
 def start():
-    parser = argparse.ArgumentParser(
-        description='monitor_exporter')
+    parser = argparse.ArgumentParser(description='monitor_exporter')
+
+    parser.add_argument('-f', '--configfile',
+                        dest="configfile", help="configuration file")
 
     parser.add_argument('-p', '--port',
                         dest="port", help="Server port")
@@ -80,5 +115,18 @@ def start():
     port = 5000
     if args.port:
         port = args.port
-    ExporterLog.info('Starting web app on port: ' + str(port))
+
+    config_file = 'config.yml'
+    if args.configfile:
+        config_file = args.configfile
+
+    config = read_config(config_file)
+
+    formatter = log.configure_logger(config)
+    ##
+
+    monitorconnection.MonitorConfig(config)
+    log.info('Starting web app on port: ' + str(port))
+
     app.run(host='0.0.0.0', port=port)
+    app.logger.handlers[0].setFormatter(formatter)

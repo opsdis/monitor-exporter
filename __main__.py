@@ -19,8 +19,6 @@
 
 """
 import proxy as proxy
-from exporterlog import ExporterLog
 
 if __name__ == "__main__":
-    ExporterLog.start()
     proxy.start()
