@@ -60,13 +60,13 @@ class MonitorConfig(object, metaclass=Singleton):
         if config:
             self.user = config['op5monitor']['user']
             self.passwd = config['op5monitor']['passwd']
-            self.host = config['op5monitor']['host']
+            self.host = config['op5monitor']['url']
             self.prefix = config['op5monitor']['metric_prefix'] + '_'
             self.labels = config['op5monitor']['custom_vars']
-            self.url_query_service_perfdata = 'https://' + self.host + \
+            self.url_query_service_perfdata = self.host + \
                                               '/api/filter/query?query=[services]%20host.name="{}' \
                                               '"&columns=host.name,description,perf_data,check_command'
-            self.url_get_host_custom_vars = 'https://' + self.host + \
+            self.url_get_host_custom_vars = self.host + \
                                             '/api/filter/query?query=[hosts]%20display_name="{}' \
                                             '"&columns=custom_variables'
 
@@ -82,7 +82,7 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_verify(self):
         return self.verify
 
-    def get_host(self):
+    def get_url(self):
         return self.host
 
     def number_of_retries(self):
