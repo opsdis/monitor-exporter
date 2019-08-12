@@ -22,7 +22,7 @@
 import requests
 import json
 from requests.auth import HTTPBasicAuth
-import log
+import monitor_exporter.log as log
 
 
 class Singleton(type):

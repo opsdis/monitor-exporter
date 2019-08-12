@@ -18,7 +18,8 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import proxy as proxy
+import monitor_exporter.main as main
 
 if __name__ == "__main__":
-    proxy.start()
+
+    main.start()

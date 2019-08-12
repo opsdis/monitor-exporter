@@ -20,7 +20,7 @@
 """
 import re
 import urllib3
-import monitorconnection as Monitor
+import monitor_exporter.monitorconnection as Monitor
 
 # Disable InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

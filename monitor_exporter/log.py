@@ -43,8 +43,15 @@ def configure_logger(config):
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
     logger.setLevel(log_level)
-    werkzeug = logging.getLogger('werkzeug')
-    werkzeug.setLevel("WARNING")
+
+    # Add our handler to all loggers
+    root = logging.root
+    existing = root.manager.loggerDict.keys()
+    for log1 in [logging.getLogger(name) for name in existing]:
+        log1.addHandler(hdlr)
+
+    #werkzeug = logging.getLogger('werkzeug')
+    #werkzeug.setLevel("WARNING")
 
 
 def read_config(config):
@@ -102,3 +109,4 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             log_record['level'] = log_record['level'].upper()
         else:
             log_record['level'] = record.levelname
+
