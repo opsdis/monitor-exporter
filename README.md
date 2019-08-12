@@ -79,8 +79,7 @@ The log stream is configure in the above config. If `logfile` is not set the log
 Logs are formatted as json so its easy to store logs in log servers like Loki and Elasticsearch. 
 
 # Prometheus configuration
-Prometheus can be used with static configuration or with dynamic file discovery using the project monitor-promdiscovery, 
-please see https://bitbucket.org/opsdis/monitor-promdiscovery
+Prometheus can be used with static configuration or with dynamic file discovery using the project [monitor-promdiscovery](https://bitbucket.org/opsdis/monitor-promdiscovery)
 
 Please add the the job to the scrape_configs in prometheus.yml.
 
