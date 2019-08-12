@@ -46,7 +46,8 @@ Example:
 ```yaml
 
 # Port can be overridden by using -p if running development flask
-#port: 5000
+# This is the default port assigned at https://github.com/prometheus/prometheus/wiki/Default-port-allocations
+#port: 9628
 
 op5monitor:
   # The url to the Monitor server
@@ -101,7 +102,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:5000
+        replacement: localhost:9628
 
 ```
 
@@ -122,7 +123,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: localhost:5000
+        replacement: localhost:9628
 
 ```
 
@@ -143,17 +144,17 @@ Set the path to the configuration file.
 
     gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app('/etc/monitor-exporter/config.yml')" 
 
-> Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:5000`
+> Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9628`
 
 ## Test the connection 
 
 Check if exporter is working. 
 
-    curl -s http://localhost:5000/health
+    curl -s http://localhost:9628/health
 
 Get metrics for a host where target is a host, `host_name` that exists in Monitor
 
-    curl -s http://localhost:5000/metrics?target=google.se
+    curl -s http://localhost:9628/metrics?target=google.se
 
 # System requierments
 Python 3

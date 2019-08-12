@@ -43,7 +43,7 @@ def start():
 
     args = parser.parse_args()
 
-    port = 5000
+    port = 9628
 
     config_file = 'config.yml'
     if args.configfile:
