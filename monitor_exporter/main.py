@@ -50,7 +50,7 @@ def start():
         config_file = args.configfile
 
     configuration = config.read_config(config_file)
-    if configuration['port']:
+    if 'port' in configuration:
         port = configuration['port']
 
     if args.port:
