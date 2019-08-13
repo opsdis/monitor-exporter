@@ -1,5 +1,5 @@
 op5monitor:
-  host: monitor.aw.oc-testbench.xyz
+  url: https://monitor.aw.oc-testbench.xyz
   user: monitor
   passwd: monitor
   metric_prefix: monitor
