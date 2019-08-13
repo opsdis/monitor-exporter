@@ -126,7 +126,20 @@ scrape_configs:
         replacement: localhost:9628
 
 ```
+# Installing
+1. Check out the git repo.
+2. Install dependency
+    
+    `pip install -r requirements.txt`
+     
+3. Build a distribution 
 
+    `python setup.py sdist`
+
+4. Install locally
+ 
+    `pip install dist/monitor-exporter-X.Y.Z.tar.gz`
+     
 
 # Running
 ## Development with flask built in webserver 
