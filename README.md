@@ -51,7 +51,7 @@ Example:
 
 op5monitor:
   # The url to the Monitor server
-  url: https://monitor.aw.oc-testbench.xyz
+  url: https://monitor.xyz
   user: monitor
   passwd: monitor
   metric_prefix: monitor
