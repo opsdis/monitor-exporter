@@ -1,3 +1,6 @@
 __pycache__/
-monitor_exporter.log
-main.py
+*.log
+venv/
+*.iml
+.idea/
+*.pyc

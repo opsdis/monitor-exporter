@@ -18,20 +18,8 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import logging
+import monitor_exporter.main as main
 
-logger = logging.getLogger('monitor_exporter')
+if __name__ == "__main__":
 
-class ExporterLog:
-
-    def start():
-        logging.basicConfig(filename='monitor_exporter.log', level=logging.INFO)
-
-    def error(message):
-        logger.error('description|{}'.format(message))
-    
-    def warn(message):
-        logger.warn('description|{}'.format(message))
-
-    def info(message):
-        logger.info('description|{}'.format(message))
+    main.start()

@@ -8,3 +8,11 @@ op5monitor:
         label_name: environment
     - site:
         label_name: dc
+
+logger:
+  # Path and name for the log file. If not set sent to stdout
+  logfile: monitor-exporter
+  # Format
+  # format: day
+  # Log level
+  #level: INFO
