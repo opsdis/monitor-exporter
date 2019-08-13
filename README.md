@@ -159,4 +159,4 @@ Get metrics for a host where target is a host, `host_name` that exists in Monito
 # System requierments
 Python 3
 
-For required packages please review `requierments.txt` 
+For required packages please review `requirements.txt`
