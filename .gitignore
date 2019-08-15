@@ -4,3 +4,6 @@ venv/
 *.iml
 .idea/
 *.pyc
+*.egg-info/
+config_my.yml
+dist/

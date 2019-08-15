@@ -1,18 +1,23 @@
+# Port can be overridden by using -p if running development flask
+#port: 9631
+
 op5monitor:
-  url: https://monitor.aw.oc-testbench.xyz
+  # The url to the Monitor server
+  url: https://monitor.xyz
   user: monitor
   passwd: monitor
   metric_prefix: monitor
+  # Example of custom vars that should be added as labels and how to be translated
   custom_vars:
+    # Specify which custom_vars to extract from Monitor
     - env:
+        # Name of the label in Prometheus
         label_name: environment
     - site:
         label_name: dc
 
 logger:
-  # Path and name for the log file. If not set sent to stdout
-  logfile: monitor-exporter
-  # Format
-  # format: day
+  # Path and name for the log file. If not set send to stdout
+  logfile: /var/tmp/monitor-exporter.log
   # Log level
-  #level: INFO
+  level: INFO
