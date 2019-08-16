@@ -41,6 +41,7 @@ class Singleton(type):
 
 
 class MonitorConfig(object, metaclass=Singleton):
+    config_entry = 'op5monitor'
 
     def __init__(self, config=None):
         """
@@ -53,16 +54,24 @@ class MonitorConfig(object, metaclass=Singleton):
         self.headers = {'content-type': 'application/json'}
         self.verify = False
         self.retries = 5
+        self.timeout = 5
         self.prefix = ''
         self.labels = []
         self.url_query_service_perfdata = ''
 
         if config:
-            self.user = config['op5monitor']['user']
-            self.passwd = config['op5monitor']['passwd']
-            self.host = config['op5monitor']['url']
-            self.prefix = config['op5monitor']['metric_prefix'] + '_'
-            self.labels = config['op5monitor']['custom_vars']
+            self.user = config[MonitorConfig.config_entry]['user']
+            self.passwd = config[MonitorConfig.config_entry]['passwd']
+            self.host = config[MonitorConfig.config_entry]['url']
+            if 'metric_prefix' in config[MonitorConfig.config_entry]:
+                self.prefix = config['op5monitor']['metric_prefix'] + '_'
+            if 'host_custom_vars' in config[MonitorConfig.config_entry]:
+                self.labels = config['op5monitor']['host_custom_vars']
+            if 'perfnametolabel' in config[MonitorConfig.config_entry]:
+                self.item_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
+            if 'timeout' in config[MonitorConfig.config_entry]:
+                self.timeout = int(config[MonitorConfig.config_entry]['timeout'])
+
             self.url_query_service_perfdata = self.host + \
                                               '/api/filter/query?query=[services]%20host.name="{}' \
                                               '"&columns=host.name,description,perf_data,check_command'
@@ -102,9 +111,9 @@ class MonitorConfig(object, metaclass=Singleton):
 
     def get_perfdata(self, hostname):
         # Get performance data from Monitor and return in json format
-        data_from_monitor, data_json = self.get(self.url_query_service_perfdata.format(hostname))
+        data_json = self.get(self.url_query_service_perfdata.format(hostname))
 
-        if len(data_from_monitor.content) < 3:
+        if not data_json:
             log.warn('Received no perfdata from Monitor')
 
         return data_json
@@ -112,7 +121,7 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_custom_vars(self, hostname):
         # Build new URL and get custom_vars from Monitor
 
-        data_from_monitor, custom_vars_json = self.get(self.url_get_host_custom_vars.format(hostname))
+        custom_vars_json = self.get(self.url_get_host_custom_vars.format(hostname))
 
         custom_vars = {}
         for var in custom_vars_json:
@@ -121,16 +130,23 @@ class MonitorConfig(object, metaclass=Singleton):
         return custom_vars
 
     def get(self, url):
-        data_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd),
-                                         verify=False, headers={'Content-Type': 'application/json'})
-        data_json = json.loads(data_from_monitor.content)
-        log.debug('API call: ' + data_from_monitor.url)
-        if data_from_monitor.status_code != 200:
-            log.info("Response", {'status': data_from_monitor.status_code, 'error': data_json['error'],
-                                  'full_error': data_json['full_error']})
-        else:
+        data_json  = {}
 
-            log.info("call api {}".format(url), {'status': data_from_monitor.status_code,
-                                                 'response_time': data_from_monitor.elapsed.total_seconds()})
+        try:
+            data_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd),
+                                             verify=False, headers={'Content-Type': 'application/json'}, timeout=self.timeout)
+            data_from_monitor.raise_for_status()
 
-        return data_from_monitor, data_json
+
+            log.debug('API call: ' + data_from_monitor.url)
+            if data_from_monitor.status_code != 200:
+                log.info("Response", {'status': data_from_monitor.status_code, 'error': data_json['error'],
+                                      'full_error': data_json['full_error']})
+            else:
+                data_json = json.loads(data_from_monitor.content)
+                log.info("call api {}".format(url), {'status': data_from_monitor.status_code,
+                                                     'response_time': data_from_monitor.elapsed.total_seconds()})
+        except requests.exceptions.RequestException as err:
+            log.error("{}".format(str(err)))
+
+        return data_json
