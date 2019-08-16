@@ -58,6 +58,7 @@ class MonitorConfig(object, metaclass=Singleton):
         self.prefix = ''
         self.labels = []
         self.url_query_service_perfdata = ''
+        self.perfname_to_label = []
 
         if config:
             self.user = config[MonitorConfig.config_entry]['user']
@@ -68,7 +69,7 @@ class MonitorConfig(object, metaclass=Singleton):
             if 'host_custom_vars' in config[MonitorConfig.config_entry]:
                 self.labels = config['op5monitor']['host_custom_vars']
             if 'perfnametolabel' in config[MonitorConfig.config_entry]:
-                self.item_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
+                self.perfname_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
             if 'timeout' in config[MonitorConfig.config_entry]:
                 self.timeout = int(config[MonitorConfig.config_entry]['timeout'])
 
@@ -109,6 +110,9 @@ class MonitorConfig(object, metaclass=Singleton):
                     labeldict.update({custom_var: prom_label})
         return labeldict
 
+    def get_perfname_to_label(self):
+        return self.perfname_to_label
+
     def get_perfdata(self, hostname):
         # Get performance data from Monitor and return in json format
         data_json = self.get(self.url_query_service_perfdata.format(hostname))
@@ -130,13 +134,13 @@ class MonitorConfig(object, metaclass=Singleton):
         return custom_vars
 
     def get(self, url):
-        data_json  = {}
+        data_json = {}
 
         try:
             data_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd),
-                                             verify=False, headers={'Content-Type': 'application/json'}, timeout=self.timeout)
+                                             verify=False, headers={'Content-Type': 'application/json'},
+                                             timeout=self.timeout)
             data_from_monitor.raise_for_status()
-
 
             log.debug('API call: ' + data_from_monitor.url)
             if data_from_monitor.status_code != 200:
