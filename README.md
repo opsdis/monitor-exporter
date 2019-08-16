@@ -37,7 +37,36 @@ Optional mointor-exporter can be configured to add specific custom variables con
 
 > Labels created from custom variables are all transformed to lowercase. 
 
+## Performance metrics name to labels
+As describe above the default naming of the promethues name is:
 
+    monitor_<check_command>_<perfname>_<unit>
+
+For some checks this does not work well like for the `elf_check_by_snmp_disk_usage_v3` check command where the perfname are the unique mount paths.
+For checks like that the where the perfname is defined depending on environment you can change so the perfname instead becomes a label.
+This is defined in the configuration like:
+
+```yaml
+  perfnametolabel:
+      # The command name
+      self_check_by_snmp_disk_usage_v3:
+        # the label name to be used
+        label_name: disk
+```
+So if the check command is `elf_check_by_snmp_disk_usage_v3` the promethues metrics will have a format like, depending on other custom variables :
+
+    monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"} 48356130816.0
+    
+If we did not make this translation we would got the following:
+
+    monitor_self_check_by_snmp_disk_usage_v3_slash_used_bytes{hostname="monitor", service="Disk usage /"} 48356130816.0
+    
+ Which is not good from a cardinality point of view.
+ 
+> Please be aware about naming conventions for perfname and services, especially when they include a name depending on 
+> what is checked like a mountpoint or disk name. 
+ 
+ 
 # Configuration
 ## monitor-exporter
 All configuration is made in the config.yml file.
@@ -56,14 +85,21 @@ op5monitor:
   passwd: monitor
   metric_prefix: monitor
   # Example of custom vars that should be added as labels and how to be translated
-  custom_vars:
+  host_custom_vars:
     # Specify which custom_vars to extract from Monitor
     - env:
         # Name of the label in Prometheus
         label_name: environment
     - site:
         label_name: dc
-
+  # This section enable that for specific check commands the perfdata metrics name will not be part of the
+  # prometheus metrics name, instead moved to a label
+  # E.g for the self_check_by_snmp_disk_usage_v3 command the perfdata name will be set to the label disk like:
+  # monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"}
+  perfnametolabel:
+    # The command name
+    self_check_by_snmp_disk_usage_v3:
+      label_name: disk
 logger:
   # Path and name for the log file. If not set send to stdout
   logfile: /var/tmp/monitor-exporter.log
