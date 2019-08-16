@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.org/opsdis/monitor-exporter.svg?branch=master)](https://api.travis-ci.org/opsdis/monitor-exporter)
+
 monitor-exporter
 -----------------------
 
