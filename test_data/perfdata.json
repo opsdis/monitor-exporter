@@ -1,0 +1,45 @@
+[
+  {
+    "host": {
+      "name": "dn.se",
+      "scheduled_downtime_depth": 0
+    },
+    "description": "PING",
+    "perf_data": {
+      "rta": {
+        "value": 0.944,
+        "unit": "ms",
+        "warn": "100.000",
+        "crit": "500.000",
+        "min": 0
+      },
+      "pl": {
+        "value": 0,
+        "unit": "%",
+        "warn": "20",
+        "crit": "60",
+        "min": 0,
+        "max": 100
+      }
+    },
+    "check_command": "check_ping!100,20%!500,60%",
+    "scheduled_downtime_depth": 0
+  },
+  {
+    "host": {
+      "name": "dn.se",
+      "scheduled_downtime_depth": 0
+    },
+    "description": "https",
+    "perf_data": {
+      "time": {
+        "value": 0.001476,
+        "unit": "s",
+        "min": 0,
+        "max": 10
+      }
+    },
+    "check_command": "check_tcp!443",
+    "scheduled_downtime_depth": 0
+  }
+]
