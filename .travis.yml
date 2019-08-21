@@ -5,6 +5,9 @@ cache: pip
 install:
   - pip install -r requirements.txt
 script:
+  - python -m unittest discover -v
+  - coverage run  -m unittest discover
+  - coverage report  monitor_exporter/*
   - python setup.py sdist
 
 before_deploy:

@@ -125,13 +125,17 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_custom_vars(self, hostname):
         # Build new URL and get custom_vars from Monitor
 
-        custom_vars_json = self.get(self.url_get_host_custom_vars.format(hostname))
+        custom_vars_json = self.get_host_custom_vars(hostname)
 
         custom_vars = {}
         for var in custom_vars_json:
             custom_vars = var['custom_variables']
 
         return custom_vars
+
+    def get_host_custom_vars(self, hostname):
+        custom_vars_json = self.get(self.url_get_host_custom_vars.format(hostname))
+        return custom_vars_json
 
     def get(self, url):
         data_json = {}

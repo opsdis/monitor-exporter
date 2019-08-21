@@ -28,9 +28,10 @@ def read_config(config_file: str) -> dict:
     :return:
     """
     config = {}
+
     try:
-        ymlfile = open(config_file, 'r')
-        config = yaml.load(ymlfile, Loader=yaml.SafeLoader)
+        with open(config_file, 'r') as ymlfile:
+            config = yaml.load(ymlfile, Loader=yaml.SafeLoader)
     except (FileNotFoundError, IOError):
         print("Config file {} not found".format(config_file))
         exit(1)

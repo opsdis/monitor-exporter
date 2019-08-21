@@ -1,0 +1,31 @@
+# Port can be overridden by using -p if running development flask
+#port: 9631
+
+op5monitor:
+  # The url to the Monitor server
+  url: https://monitor.xyz
+  user: monitor
+  passwd: monitor
+  metric_prefix: monitor
+  # Example of custom vars that should be added as labels and how to be translated
+  host_custom_vars:
+    # Specify which custom_vars to extract from Monitor
+    - env:
+        # Name of the label in Prometheus
+        label_name: environment
+    - site:
+        label_name: dc
+  # This section enable that for specific check commands the perfdata metrics name will not be part of the
+  # prometheus metrics name, instead moved to a label
+  # E.g for the self_check_by_snmp_disk_usage_v3 command the perfdata name will be set to the label disk like:
+  # monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"}
+  perfnametolabel:
+    # The command name
+    self_check_by_snmp_disk_usage_v3:
+      label_name: disk
+
+logger:
+  # Path and name for the log file. If not set send to stdout
+  logfile: /var/tmp/monitor-exporter.log
+  # Log level
+  level: INFO
