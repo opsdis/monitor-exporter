@@ -3,49 +3,48 @@
 monitor-exporter
 -----------------------
 
-# Overview 
+# Overview
 
-The monitor-exporter utilize OP5 Monitors API to fetch service based performance data and publish it in a way that lets prometheus scrape the 
-performance data as metrics.
+The monitor-exporter utilises OP5 Monitor's API to fetch service-based performance data and publish it in a way that lets Prometheus scrape the performance data as metrics.
 
 Benefits:
 
-- Enable advanced queries and aggregation on timeseries
-- Promethues based alerting rules 
+- Enable advanced queries and aggregation on time series
+- Prometheus-based alerting rules
 - Grafana graphing
-- Utilize investments with OP5 Monitor of collecting metrics 
+- Take advantage of metrics already collected by OP5 Monitor, without rerunning checks
 
-This solution is a perfect gateway for any OP5 Monitor users that likes to start using Prometheus and Grafana.
+This solution is a perfect gateway for any OP5 Monitor users that would like to start using Prometheus and Grafana.
 
 # Metrics naming
 ## Metric names
-Metrics that is scraped with the monitor-exporter will have the following name structure:
- 
+Metrics that are scraped with the monitor-exporter will have the following naming structure:
+
     monitor_<check_command>_<perfname>_<unit>
 
-> Unit is only added if it exists on perfromance data
+> Unit is only added if it exists on performance data
 
-Example from check command `check_ping` will result in two metrics: 
-    
+For example the check command `check_ping` will result in two metrics:
+
     monitor_check_ping_rta_seconds
     monitor_check_ping_pl_ratio
 ## Metric labels
-The monitor-exporter adds a number of labels to each metrics: 
+The monitor-exporter adds a number of labels to each metric:
 
 - host - is the `host_name` in Monitor
 - service - is the `service_description` in Monitor
 
-Optional mointor-exporter can be configured to add specific custom variables configured on the host. 
+Optionally, monitor-exporter can be configured to pass specific custom variables (configured on the Monitor host) to Prometheus.
 
-> Labels created from custom variables are all transformed to lowercase. 
+> Labels created from custom variables are all transformed to lowercase.
 
 ## Performance metrics name to labels
-As describe above the default naming of the promethues name is:
+As described above, the default naming of the Prometheus name is:
 
     monitor_<check_command>_<perfname>_<unit>
 
-For some checks this does not work well like for the `elf_check_by_snmp_disk_usage_v3` check command where the perfname are the unique mount paths.
-For checks like that the where the perfname is defined depending on environment you can change so the perfname instead becomes a label.
+For some checks this does not work well like for the `self_check_by_snmp_disk_usage_v3` check command where the perfname are the unique mount paths.
+For checks where the perfname is defined depending on environment, you can change so the perfname becomes a label instead.
 This is defined in the configuration like:
 
 ```yaml
@@ -55,20 +54,20 @@ This is defined in the configuration like:
         # the label name to be used
         label_name: disk
 ```
-So if the check command is `elf_check_by_snmp_disk_usage_v3` the promethues metrics will have a format like, depending on other custom variables :
+So if the check command is `elf_check_by_snmp_disk_usage_v3`, the Prometheus metrics will have a format like, depending on other custom variables:
 
     monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"} 48356130816.0
-    
-If we did not make this translation we would got the following:
+
+If we did not make this translation, we would get the following:
 
     monitor_self_check_by_snmp_disk_usage_v3_slash_used_bytes{hostname="monitor", service="Disk usage /"} 48356130816.0
-    
- Which is not good from a cardinality point of view.
- 
-> Please be aware about naming conventions for perfname and services, especially when they include a name depending on 
-> what is checked like a mountpoint or disk name. 
- 
- 
+
+ Which is not good from a cardinality point of view (due to reduced performance from increased data utilisation).
+
+> Please be aware of naming conventions for perfname and services, especially when they include a name depending on
+> what is checked like a mountpoint or disk name.
+
+
 # Configuration
 ## monitor-exporter
 All configuration is made in the config.yml file.
@@ -82,7 +81,7 @@ Example:
 
 op5monitor:
   # The url to the Monitor server
-  url: https://monitor.xyz
+  url: https://monitor.example.com
   user: monitor
   passwd: monitor
   metric_prefix: monitor
@@ -95,7 +94,7 @@ op5monitor:
     - site:
         label_name: dc
   # This section enable that for specific check commands the perfdata metrics name will not be part of the
-  # prometheus metrics name, instead moved to a label
+  # Prometheus metrics name, and is instead moved to a label
   # E.g for the self_check_by_snmp_disk_usage_v3 command the perfdata name will be set to the label disk like:
   # monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"}
   perfnametolabel:
@@ -103,19 +102,19 @@ op5monitor:
     self_check_by_snmp_disk_usage_v3:
       label_name: disk
 logger:
-  # Path and name for the log file. If not set send to stdout
+  # Path and name for the log file. If not set, send to stdout
   logfile: /var/tmp/monitor-exporter.log
   # Log level
   level: INFO
 
 ```
 
-> When running with gunicorn the port is selected by gunicorn
+> When running with gunicorn the port is defined by gunicorn
 
 # Logging
 The log stream is configure in the above config. If `logfile` is not set the logs will go to stdout.
 
-Logs are formatted as json so its easy to store logs in log servers like Loki and Elasticsearch. 
+Logs are formatted as json so it's easy to store logs in log servers like Loki and Elasticsearch.
 
 # Prometheus configuration
 Prometheus can be used with static configuration or with dynamic file discovery using the project [monitor-promdiscovery](https://bitbucket.org/opsdis/monitor-promdiscovery)
@@ -165,49 +164,49 @@ scrape_configs:
 
 ```
 # Installing
-1. Check out the git repo.
-2. Install dependency
-    
+1. Check out / clone the git repo.
+2. Install dependencies
+
     `pip install -r requirements.txt`
-     
-3. Build a distribution 
+
+3. Build a distribution
 
     `python setup.py sdist`
 
 4. Install locally
- 
+
     `pip install dist/monitor-exporter-X.Y.Z.tar.gz`
-     
+
 
 # Running
-## Development with flask built in webserver 
+## Development with flask built in webserver
 
     python -m  monitor_exporter -f config.yml
 
 The switch -p enable setting of the port.
-    
-## Production with gunicorn 
+
+## Production with gunicorn
 Running with default config.yml. The default location is current directory
 
     gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app()"
-    
+
 Set the path to the configuration file.
 
-    gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app('/etc/monitor-exporter/config.yml')" 
+    gunicorn --access-logfile /dev/null -w 4 "wsgi:create_app('/etc/monitor-exporter/config.yml')"
 
 > Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9631`
 
-## Test the connection 
+## Test the connection
 
-Check if exporter is working. 
+Check if the exporter is working.
 
     curl -s http://localhost:9631/health
 
-Get metrics for a host where target is a host, `host_name` that exists in Monitor
+Get metrics for a host where `target` is a host using the same `host_name` in Monitor
 
     curl -s http://localhost:9631/metrics?target=google.se
 
-# System requierments
-Python 3
+# System requirements
+Python 3.6
 
-For required packages please review `requirements.txt`
+For required packages, please review `requirements.txt`
