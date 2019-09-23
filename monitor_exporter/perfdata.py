@@ -37,12 +37,12 @@ class Perfdata:
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
 
-    def get_perfdata(self):
+    async def get_perfdata(self):
         # Use _get_data method to fetch performance data from Monitor
-        data_json = self.monitor.get_perfdata(self.query_hostname)
+        data_json = await self.monitor.get_perfdata(self.query_hostname)
 
         # Use prometheus_labels method to fetch extra labels
-        host_custom_vars_labels = self.prometheus_labels()
+        host_custom_vars_labels = await self.prometheus_labels()
 
         check_command_regex = re.compile(r'^.+?[^!\n]+')
 
@@ -100,9 +100,9 @@ class Perfdata:
         prometheus_key = Perfdata.rem_illegal_chars(prometheus_key)
         return prometheus_key
 
-    def prometheus_labels(self):
+    async def prometheus_labels(self):
         # Extract metric labels from custom_vars
-        monitor_custom_vars = self.monitor.get_custom_vars(self.query_hostname)
+        monitor_custom_vars = await self.monitor.get_custom_vars(self.query_hostname)
         new_labels = {}
 
         if monitor_custom_vars:

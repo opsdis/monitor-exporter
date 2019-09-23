@@ -18,21 +18,3 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-from flask import Flask
-import monitor_exporter.log as log
-import monitor_exporter.monitorconnection as monitorconnection
-import monitor_exporter.proxy as proxy
-import monitor_exporter.fileconfiguration as config
-
-
-#app = Flask(__name__)
-
-#config_file = 'config.yml'
-
-#config = config.read_config(config_file)
-
-#log.configure_logger(config)
-
-#monitorconnection.MonitorConfig(config)
-
-#app.register_blueprint(proxy.app, url_prefix='/')

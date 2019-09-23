@@ -18,7 +18,7 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-
+import aiohttp
 import requests
 import json
 from requests.auth import HTTPBasicAuth
@@ -42,6 +42,8 @@ class Singleton(type):
 
 class MonitorConfig(object, metaclass=Singleton):
     config_entry = 'op5monitor'
+    # high number so all services is fetched
+    default_limit = '10000'
 
     def __init__(self, config=None):
         """
@@ -76,7 +78,7 @@ class MonitorConfig(object, metaclass=Singleton):
             self.url_query_service_perfdata = self.host + \
                                               '/api/filter/query?query=[services]%20host.name="{}' \
                                               '"&columns=host.name,description,perf_data,check_command' \
-                                              '&limit=10000'
+                                              '&limit=' + self.default_limit
             self.url_get_host_custom_vars = self.host + \
                                             '/api/filter/query?query=[hosts]%20display_name="{}' \
                                             '"&columns=custom_variables'
@@ -114,19 +116,19 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_perfname_to_label(self):
         return self.perfname_to_label
 
-    def get_perfdata(self, hostname):
+    async def get_perfdata(self, hostname):
         # Get performance data from Monitor and return in json format
-        data_json = self.get(self.url_query_service_perfdata.format(hostname))
+        data_json = await self.get(self.url_query_service_perfdata.format(hostname))
 
         if not data_json:
             log.warn('Received no perfdata from Monitor')
 
         return data_json
 
-    def get_custom_vars(self, hostname):
+    async def get_custom_vars(self, hostname):
         # Build new URL and get custom_vars from Monitor
 
-        custom_vars_json = self.get_host_custom_vars(hostname)
+        custom_vars_json = await self.get_host_custom_vars(hostname)
 
         custom_vars = {}
         for var in custom_vars_json:
@@ -134,11 +136,11 @@ class MonitorConfig(object, metaclass=Singleton):
 
         return custom_vars
 
-    def get_host_custom_vars(self, hostname):
-        custom_vars_json = self.get(self.url_get_host_custom_vars.format(hostname))
+    async def get_host_custom_vars(self, hostname):
+        custom_vars_json = await self.get(self.url_get_host_custom_vars.format(hostname))
         return custom_vars_json
 
-    def get(self, url):
+    async def get_old(self, url):
         data_json = {}
 
         try:
@@ -159,3 +161,15 @@ class MonitorConfig(object, metaclass=Singleton):
             log.error("{}".format(str(err)))
 
         return data_json
+
+    async def get(self, url):
+        data_json = {}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
+                                verify_ssl=False,
+                                headers={'Content-Type': 'application/json'}) as response:
+                    re = await response.text()
+                    return json.loads(re)
+        finally:
+            pass
