@@ -75,7 +75,8 @@ class MonitorConfig(object, metaclass=Singleton):
 
             self.url_query_service_perfdata = self.host + \
                                               '/api/filter/query?query=[services]%20host.name="{}' \
-                                              '"&columns=host.name,description,perf_data,check_command'
+                                              '"&columns=host.name,description,perf_data,check_command' \
+                                              '&limit=10000'
             self.url_get_host_custom_vars = self.host + \
                                             '/api/filter/query?query=[hosts]%20display_name="{}' \
                                             '"&columns=custom_variables'
