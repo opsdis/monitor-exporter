@@ -1,11 +1,29 @@
 # Port can be overridden by using -p if running development flask
 #port: 9631
+cache:
+  # Use redis for cache - future may support others
+  # Values below is the default
+  redis:
+    # redis host
+    host: localhost
+    # redis port
+    port: 6379
+    # the auth string used in redis
+    #auth: secretstuff
+    # the redis db to use
+    db: 0
+  # The interval to collect data from Monitor
+  interval: 60
+  # The time to live for the stored Monitor objects in the redis cache
+  ttl: 300
 
 op5monitor:
   # The url to the Monitor server
-  url: https://monitor.xyz
-  user: monitor
-  passwd: monitor
+  url: https://foo.com
+  # Monitor username - with api access rights
+  user: administrator
+  # Monitor password
+  passwd: admin
   metric_prefix: monitor
   # Example of custom vars that should be added as labels and how to be translated
   host_custom_vars:
@@ -26,6 +44,6 @@ op5monitor:
 
 logger:
   # Path and name for the log file. If not set send to stdout
-  logfile: /var/tmp/monitor-exporter.log
+  #logfile: /var/tmp/monitor-exporter.log
   # Log level
   level: INFO

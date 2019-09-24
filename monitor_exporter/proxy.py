@@ -21,7 +21,6 @@
 import asyncio
 from quart import Quart, request, Response, jsonify, Blueprint
 from prometheus_client import (CONTENT_TYPE_LATEST, Counter)
-from quart import Blueprint
 
 from monitor_exporter.perfdata import Perfdata
 import monitor_exporter.monitorconnection as monitorconnection
