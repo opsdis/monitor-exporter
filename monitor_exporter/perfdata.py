@@ -33,7 +33,7 @@ class Perfdata:
         self.monitor = monitor
         self.query_hostname = query_hostname
         self.prefix = monitor.get_prefix()
-        self.labels = monitor.get_labels()
+        self.configured_labels = monitor.get_configured_labels()
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
 
@@ -101,15 +101,26 @@ class Perfdata:
         return prometheus_key
 
     async def prometheus_labels(self):
-        # Extract metric labels from custom_vars
+        '''
+        Extract metric labels from custom_vars.
+        Only defined custom vars are selected - see config.yml
+
+        :return:
+        '''
         monitor_custom_vars = await self.monitor.get_custom_vars(self.query_hostname)
         new_labels = {}
 
         if monitor_custom_vars:
+            # Make all variables to lower
             monitor_custom_vars = {k.lower(): v for k, v in monitor_custom_vars.items()}
-            for i in self.labels.keys():
-                if i in monitor_custom_vars.keys():
-                    new_labels.update({self.labels[i]: monitor_custom_vars[i]})
+
+            # Translate if configured
+            for key, value in monitor_custom_vars.items():
+                if key in self.configured_labels:
+                    new_labels.update({self.configured_labels[key]: value})
+                elif self.monitor.is_all_custom_vars():
+                        new_labels.update({key: value})
+
         return new_labels
 
     def prometheus_format(self):

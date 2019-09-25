@@ -74,6 +74,7 @@ class MonitorConfig(object, metaclass=Singleton):
         self.labels = []
         self.url_query_service_perfdata = ''
         self.perfname_to_label = []
+        self.allow_all_custom_vars = False
 
         if config:
             self.user = config[MonitorConfig.config_entry]['user']
@@ -87,6 +88,8 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.perfname_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
             if 'timeout' in config[MonitorConfig.config_entry]:
                 self.timeout = int(config[MonitorConfig.config_entry]['timeout'])
+            if 'all_custom_vars' in config[MonitorConfig.config_entry]:
+                self.allow_all_custom_vars = bool(config[MonitorConfig.config_entry]['all_custom_vars'])
 
             self.url_query_service_perfdata = self.host + \
                                               '/api/filter/query?query=[services]%20host.name="{}' \
@@ -125,7 +128,10 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_prefix(self):
         return self.prefix
 
-    def get_labels(self):
+    def is_all_custom_vars(self)-> bool:
+        return self.allow_all_custom_vars
+
+    def get_configured_labels(self):
         labeldict = {}
 
         for label in self.labels:
@@ -137,20 +143,44 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_perfname_to_label(self):
         return self.perfname_to_label
 
-    async def get_perfdata(self, hostname):
-        # Get performance data from Monitor and return in dict format
-        if self.is_cache:
-            data_json = await self.get_cache_service_perfdata(hostname)
-        else:
-            data_json = await self.get(self.url_query_service_perfdata.format(hostname))
+    async def get_perfdata(self, hostname: str) -> dict:
+        '''
+        Get performance data from Monitor or from cache depending on the configuration.
+        The data returned is a dict with the following structure
+        <class 'dict'>:
+        {
+        'host':
+            {'name': 'google.se'},
+        'description': 'ping',
+        'perf_data':
+            {'rta':
+                {'value': 2.504, 'unit': 'ms', 'warn': '100.000', 'crit': '200.000', 'min': 0},
+            'pl':
+                {'value': 0, 'unit': '%', 'warn': '40', 'crit': '80', 'min': 0, 'max': 100}
+            },
+        'check_command': 'check_ping!100!200'
+        }
+        :param hostname:
+        :return:
+        '''
 
-        if not data_json:
+        if self.is_cache:
+            perf_data = await self.get_cache_service_perfdata(hostname)
+        else:
+            perf_data = await self.get(self.url_query_service_perfdata.format(hostname))
+
+        if not perf_data:
             log.warn('Received no perfdata from Monitor')
 
-        return data_json
+        return perf_data
 
     async def get_custom_vars(self, hostname):
-        # Build new URL and get custom_vars from Monitor
+        '''
+        Build new URL and get custom_vars from Monitor
+        :param hostname:
+        :return:
+        '''
+
         if self.is_cache:
             custom_vars_json = await self.get_cache_host_custom_vars(hostname)
         else:
@@ -163,11 +193,7 @@ class MonitorConfig(object, metaclass=Singleton):
 
         return custom_vars
 
-    #    async def get_host_custom_vars(self, hostname):
-    #        custom_vars_json = await self.get(self.url_get_host_custom_vars.format(hostname))
-    #        return custom_vars_json
-
-    def get_old(self, url):
+    def get_sync(self, url):
         data_json = {}
 
         try:
@@ -204,16 +230,16 @@ class MonitorConfig(object, metaclass=Singleton):
     async def get_cache_service_perfdata(self, hostname):
         r = self.get_cache_connection()
 
-        data = r.get(hostname + ':services')
+        data = r.get(self.key_services(hostname))
         if data:
             return json.loads(data)
         else:
             return []
 
-    async def get_cache_host_custom_vars(self, hostname):
+    async def get_cache_host_custom_vars(self, host_name):
         r = self.get_cache_connection()
 
-        data = r.get(hostname + ':customvars')
+        data = r.get(self.key_customvars(host_name))
         if data:
             return [json.loads(data)]
         else:
@@ -221,13 +247,13 @@ class MonitorConfig(object, metaclass=Singleton):
 
     def collect_cache(self, ttl: int):
 
-        count_services = self.get_old(self.url_query_all_service_perfdata.format('count'))
+        count_services = self.get_sync(self.url_query_all_service_perfdata.format('count'))
         start_time = time.time()
         count = 0
         hosts_to_services = {}
         if 'count' in count_services:
             count = count_services['count']
-            services_flat = self.get_old(self.url_query_all_service_perfdata.format('query') + '&limit=' + str(count))
+            services_flat = self.get_sync(self.url_query_all_service_perfdata.format('query') + '&limit=' + str(count))
             for service_item in services_flat:
                 if service_item['host']['name'] not in hosts_to_services:
                     hosts_to_services[service_item['host']['name']] = []
@@ -235,10 +261,10 @@ class MonitorConfig(object, metaclass=Singleton):
                 # del service_item['host']
                 hosts_to_services[host_name].append(service_item)
 
-        count_hosts = self.get_old(self.url_query_all_host_custom_vars.format('count'))
+        count_hosts = self.get_sync(self.url_query_all_host_custom_vars.format('count'))
         if 'count' in count_hosts:
             count = count_hosts['count']
-            hosts = self.get_old(self.url_query_all_host_custom_vars.format('query') + '&limit=' + str(count))
+            hosts = self.get_sync(self.url_query_all_host_custom_vars.format('query') + '&limit=' + str(count))
 
         start_redis_time = time.time()
         r = self.get_cache_connection()
@@ -246,18 +272,24 @@ class MonitorConfig(object, metaclass=Singleton):
         for host in hosts:
             host_name = host['name']
             del host['name']
-            p.set(host_name + ":customvars", json.dumps(host))  # host['custom_variables']))
-            p.expire(host_name + ":customvars", ttl)
+            p.set(self.key_customvars(host_name), json.dumps(host))  # host['custom_variables']))
+            p.expire(self.key_customvars(host_name), ttl)
         p.execute()
 
         p = r.pipeline()
         for host, service in hosts_to_services.items():
-            p.set(host + ':services', json.dumps(service))
-            p.expire(host + ':services', ttl)
+            p.set(self.key_services(host), json.dumps(service))
+            p.expire(self.key_services(host), ttl)
         p.execute()
         end_time = time.time()
         log.info(
             f"Monitor collector exec time total {(end_time - start_time)} redis write {len(services_flat) + len(hosts)} objects in {end_time - start_redis_time}")
 
+    def key_services(self, host):
+        return host + ':services'
+
+    def key_customvars(self, host_name):
+        return host_name + ":customvars"
+
     def get_cache_connection(self):
-        return redis.Redis(host=self.redis_host,port=self.redis_port, db=self.redis_db, password=self.redis_auth)
+        return redis.Redis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth)

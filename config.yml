@@ -24,15 +24,24 @@ op5monitor:
   user: administrator
   # Monitor password
   passwd: admin
+
+  # The prefix that will be set for all metrics
   metric_prefix: monitor
-  # Example of custom vars that should be added as labels and how to be translated
+
+  # Allow or disallow all host custom variables in Monitor to Prometheus labels
+  # If false only the custom variables in "host_custom_vars" is allowed
+  # default False
+  all_custom_vars: True
+
+  # Specify which custom_vars to translate from Monitor
   host_custom_vars:
-    # Specify which custom_vars to extract from Monitor
     - env:
-        # Name of the label in Prometheus
+        # Translate custom variable "env" to the label "environment" in Prometheus
         label_name: environment
     - site:
+        # Translate custom variable "site" to the label "dc" in Prometheus
         label_name: dc
+
   # This section enable that for specific check commands the perfdata metrics name will not be part of the
   # prometheus metrics name, instead moved to a label
   # E.g for the self_check_by_snmp_disk_usage_v3 command the perfdata name will be set to the label disk like:
