@@ -52,7 +52,10 @@ class MonitorConfig(object, metaclass=Singleton):
         The constructor takes on single argument that is a config dict
         :param config:
         """
-        self.is_cache = False if config.get('cache') is None else True
+        self.is_cache = False
+        if config:
+            self.is_cache = False if 'cache' not in config else True
+
         if self.is_cache:
             self.redis_host = 'localhost' if config.get('cache').get('redis').get('host') is None else config.get(
                 'cache').get('redis').get('host')
