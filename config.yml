@@ -50,6 +50,8 @@ op5monitor:
     # The command name
     self_check_by_snmp_disk_usage_v3:
       label_name: disk
+    check_disk_local_mb:
+      label_name: local_disk
 
 logger:
   # Path and name for the log file. If not set send to stdout
