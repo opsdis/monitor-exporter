@@ -112,5 +112,5 @@ def start_scheduler(configuration):
         # Run once at start up
         monitorconnection.MonitorConfig().collect_cache(ttl)
         scheduler.add_job(monitorconnection.MonitorConfig().collect_cache, trigger='interval', args=[ttl], seconds=seconds)
-        # scheduler.add_job(, 'interval', seconds=seconds)
         scheduler.start()
+
