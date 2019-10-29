@@ -42,7 +42,7 @@ class Perfdata:
 
     async def get_perfdata(self):
         # Use _get_data method to fetch performance data from Monitor
-        data_json = await self.monitor.get_perfdata(self.query_hostname)
+        data_json = await self.monitor.get_service_data(self.query_hostname)
 
         # Use prometheus_labels method to fetch extra labels
         host_data = await self.monitor.get_host_data(self.query_hostname)
