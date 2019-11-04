@@ -35,21 +35,21 @@ class TestMonitor(unittest.TestCase):
         mcon = Monitor.MonitorConfig(self.config)
 
         # Create Mock
-        mcon.get_perfdata = AsyncMock(return_value=get_perf_mock_file())
-        mcon.get_host_data = AsyncMock(return_value=get_custom_vars_mock_file())
+        mcon.get_host_data = AsyncMock(return_value=get_perf_mock_file())
+        #mcon.get_perfdata = AsyncMock(return_value=get_custom_vars_mock_file())
 
-        perf = perfdata.Perfdata(mcon, 'dn.se')
+        perf = perfdata.Perfdata(mcon, 'google.se')
 
         # Get the data from Monitor
         monitor_data = _run(perf.get_perfdata())
-        self.assertEqual(len(monitor_data), 3)
+        self.assertEqual(len(monitor_data), 11)
 
         self.assertTrue(
-            'monitor_check_ping_rta_seconds{hostname="dn.se", service="PING", environment="prod", dc="sto"}' in monitor_data)
+            'monitor_host_state{hostname="google.se", environment="production"}' in monitor_data)
         self.assertTrue(
-            'monitor_check_ping_pl_ratio{hostname="dn.se", service="PING", environment="prod", dc="sto"}' in monitor_data)
+            'monitor_check_disk_local_mb_slash_bytes{hostname="google.se", service="disk_root", environment="production"}' in monitor_data)
         self.assertTrue(
-            'monitor_check_tcp_time_seconds{hostname="dn.se", service="https", environment="prod", dc="sto"}' in monitor_data)
+            'monitor_check_ping_rta_seconds{hostname="google.se", service="pingit", environment="production"}' in monitor_data)
 
 def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
