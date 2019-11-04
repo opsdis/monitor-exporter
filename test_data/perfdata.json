@@ -1,45 +1,89 @@
-[
-  {
-    "host": {
-      "name": "dn.se",
-      "scheduled_downtime_depth": 0
+{
+  "name": "google.se",
+  "custom_variables": {
+    "ENV": "production"
+  },
+  "perf_data": {
+    "pkt": {
+      "value": 1,
+      "warn": "0",
+      "crit": "0",
+      "min": 0,
+      "max": 5
     },
-    "description": "PING",
+    "rta": {
+      "value": 3.08,
+      "warn": "2000.000",
+      "crit": "2000.000"
+    },
+    "pl": {
+      "value": 0,
+      "unit": "%",
+      "warn": "95",
+      "crit": "100",
+      "min": 0,
+      "max": 100
+    }
+  },
+  "check_command": "check-host-alive",
+  "state": 0,
+  "services": [{
+    "host": {
+      "name": "google.se"
+    },
+    "description": "disk_root",
+    "perf_data": {
+      "/": {
+        "value": 46139,
+        "unit": "MB",
+        "warn": "3806897",
+        "crit": "3806902",
+        "min": 0,
+        "max": 3806907
+      }
+    },
+    "check_command": "check_disk_local_mb!10!5!/",
+    "state": 0
+  }, {
+    "host": {
+      "name": "google.se"
+    },
+    "description": "disk_run",
+    "perf_data": {
+      "/run": {
+        "value": 25,
+        "unit": "MB",
+        "warn": "7927",
+        "crit": "7932",
+        "min": 0,
+        "max": 7937
+      }
+    },
+    "check_command": "check_disk_local_mb!10!5!/run",
+    "state": 0
+  }, {
+    "host": {
+      "name": "google.se"
+    },
+    "description": "pingit",
     "perf_data": {
       "rta": {
-        "value": 0.944,
+        "value": 2.319,
         "unit": "ms",
-        "warn": "100.000",
+        "warn": "0.000",
         "crit": "500.000",
         "min": 0
       },
       "pl": {
         "value": 0,
         "unit": "%",
-        "warn": "20",
-        "crit": "60",
+        "warn": "40",
+        "crit": "80",
         "min": 0,
         "max": 100
       }
     },
-    "check_command": "check_ping!100,20%!500,60%",
-    "scheduled_downtime_depth": 0
-  },
-  {
-    "host": {
-      "name": "dn.se",
-      "scheduled_downtime_depth": 0
-    },
-    "description": "https",
-    "perf_data": {
-      "time": {
-        "value": 0.001476,
-        "unit": "s",
-        "min": 0,
-        "max": 10
-      }
-    },
-    "check_command": "check_tcp!443",
-    "scheduled_downtime_depth": 0
-  }
-]
+    "check_command": "check_ping",
+    "state": 1
+  }]
+}
