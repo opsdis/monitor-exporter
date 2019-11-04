@@ -5,7 +5,8 @@ monitor-exporter
 
 # Overview
 
-The monitor-exporter utilises ITRS, former OP5, Monitor's API to fetch service-based performance data and publish it in a way that lets Prometheus scrape the performance data as metrics.
+The monitor-exporter utilises ITRS, former OP5, Monitor's API to fetch service-based performance data and publish it in 
+a way that lets Prometheus scrape the performance data and state as metrics.
 
 Benefits:
 
@@ -29,14 +30,17 @@ For example the check command `check_ping` will result in two metrics:
 
     monitor_check_ping_rta_seconds
     monitor_check_ping_pl_ratio
+    
 ### Host performance data
 In Monitor the host also have a check to verify the state of the host. The metric name is always called `monitor_check_host_alive`.
 If this check as multiple performance values they will be reported as individual metrics, e.g.
+
 ```
 monitor_check_host_alive_pkt{hostname="foo.com", environment="production", service="isalive"} 1
 monitor_check_host_alive_rta{hostname="foo.com", environment="production", service="isalive"} 2.547
 monitor_check_host_alive_pl_ratio{hostname="foo.com", environment="production", service="isalive"} 0.0
 ```
+
 > Service label will always be `isalive`
 
 ## State 
@@ -58,7 +62,7 @@ The monitor-exporter adds a number of labels to each metric:
 - hostname - is the `host_name` in Monitor
 - service - is the `service_description` in Monitor
 
-Optionally, monitor-exporter can be configured to pass specific custom variables (configured on the Monitor host) to Prometheus.
+Optionally the monitor-exporter can be configured to pass specific custom variables (configured on the Monitor host) to Prometheus.
 
 > Labels created from custom variables are all transformed to lowercase.
 
@@ -68,7 +72,7 @@ As described above, the default naming of the Prometheus name is:
     monitor_<check_command>_<perfname>_<unit>
 
 For some checks this does not work well like for the `self_check_by_snmp_disk_usage_v3` check command where the perfname are the unique mount paths.
-For checks where the perfname is defined depending on environment, you can change so the perfname to become a label instead.
+For checks where the perfname is defined depending on a specific name, you can change it so the perfname becomes a label instead.
 This is defined in the configuration like:
 
 ```yaml
@@ -80,7 +84,7 @@ This is defined in the configuration like:
       check_disk_local_mb:
         label_name: local_disk
 ```
-So if the check command is `self_check_by_snmp_disk_usage_v3`, the Prometheus metrics will have a format like, depending on other custom variables:
+So if the check command is `self_check_by_snmp_disk_usage_v3`, the Prometheus metrics will have a format like:
 
     monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"} 48356130816.0
 
@@ -88,7 +92,7 @@ If we did not make this translation, we would get the following:
 
     monitor_self_check_by_snmp_disk_usage_v3_slash_used_bytes{hostname="monitor", service="Disk usage /"} 48356130816.0
 
- Which is not good from a cardinality point of view (due to reduced performance from increased data utilisation).
+ Which is not so good since we get specific metric name from the perfname.
 
 > Please be aware of naming conventions for perfname and services, especially when they include a name depending on
 > what is checked like a mountpoint or disk name.
@@ -139,8 +143,9 @@ logger:
 # Using Redis cache
 If you have a large Monitor configuration, the load of the Monitor server can get high when collecting host and service data over the api with a high rate.
 We strongly recommend that you instead collect host and service data in a batch and store it in a redis cache. 
-The interval of the batch collecting is configurable, but considering that most checks in Monitor are often done in 5 minutes interval. 
-So collecting every minute should be more tham enough. 
+The interval of the batch collecting is configurable, but considering that most service checks in Monitor are often done in 5 minutes interval, 
+collecting every minute should be more than enough.
+ 
 To use caching just add this to your `config.yml`:
 ```
 cache:
@@ -168,7 +173,8 @@ The log stream is configure in the above config. If `logfile` is not set the log
 Logs are formatted as json so it's easy to store logs in log servers like Loki and Elasticsearch.
 
 # Prometheus configuration
-Prometheus can be used with static configuration or with dynamic file discovery using the project [monitor-promdiscovery](https://bitbucket.org/opsdis/monitor-promdiscovery)
+Prometheus can be used with static configuration or with dynamic file discovery using the project 
+[monitor-promdiscovery](https://bitbucket.org/opsdis/monitor-promdiscovery)
 
 Please add the the job to the scrape_configs in prometheus.yml.
 
@@ -215,7 +221,7 @@ scrape_configs:
 
 ```
 # Installing
-1. Check out / clone the git repo.
+1. Clone the git repo.
 2. Install dependencies
 
     `pip install -r requirements.txt`
@@ -261,3 +267,6 @@ Get metrics for a host where `target` is a host using the same `host_name` in Mo
 Python 3.6
 
 For required packages, please review `requirements.txt`
+
+# License 
+The monitor-exporter is licensed under GPL version 3.
