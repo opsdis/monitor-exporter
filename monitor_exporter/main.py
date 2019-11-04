@@ -23,10 +23,13 @@ import argparse
 import monitor_exporter.log as log
 import monitor_exporter.fileconfiguration as config
 import monitor_exporter.proxy as proxy
-
-from flask import Flask
+from quart import Quart
 import monitor_exporter.monitorconnection as monitorconnection
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+default_interval = 60
+default_ttl = 300
 
 def start():
     """
@@ -57,15 +60,18 @@ def start():
         port = args.port
 
     log.configure_logger(configuration)
-    ##
 
     monitorconnection.MonitorConfig(configuration)
-    log.info('Starting web app on port: ' + str(port))
 
-    app = Flask(__name__)
+    start_scheduler(configuration)
 
-    app.register_blueprint(proxy.app, url_prefix='/')
+    log.info(f"Starting web app on port {port}")
+
+    app = Quart(__name__)
+
+    app.register_blueprint(proxy.app, url_prefix='')
     app.run(host='0.0.0.0', port=port)
+    log.info('Starting web app on port: ' + str(port))
 
 
 def create_app(config_path=None):
@@ -84,10 +90,27 @@ def create_app(config_path=None):
     log.configure_logger(configuration)
 
     monitorconnection.MonitorConfig(configuration)
+
+    start_scheduler(configuration)
     log.info('Starting web app')
 
-    app = Flask(__name__)
-
-    app.register_blueprint(proxy.app, url_prefix='/')
+    app = Quart(__name__)
+    app.register_blueprint(proxy.app, url_prefix='')
 
     return app
+
+
+def start_scheduler(configuration):
+
+    if 'cache' in configuration:
+        scheduler = AsyncIOScheduler()
+        seconds = default_interval if configuration.get('cache').get('interval') is None \
+            else configuration.get('cache').get('interval')
+        ttl = default_ttl if configuration.get('cache').get('ttl') is None \
+            else configuration.get('cache').get('ttl')
+        log.info(f"Monitor collector will run every {seconds} sec")
+        # Run once at start up
+        monitorconnection.MonitorConfig().collect_cache(ttl)
+        scheduler.add_job(monitorconnection.MonitorConfig().collect_cache, trigger='interval', args=[ttl], seconds=seconds)
+        scheduler.start()
+
