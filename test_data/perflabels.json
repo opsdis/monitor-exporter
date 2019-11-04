@@ -1,9 +1,0 @@
-[
-  {
-    "custom_variables": {
-      "ENV": "prod",
-      "SITE": "sto",
-      "SKAINTEMED": "fail"
-    }
-  }
-]
