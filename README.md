@@ -137,10 +137,10 @@ logger:
 
 > When running with gunicorn the port is defined by gunicorn
 # Using Redis cache
-If you have a large Monitor configuration the load of the Monitor server can get high when collection host and service data over the api.
+If you have a large Monitor configuration, the load of the Monitor server can get high when collecting host and service data over the api with a high rate.
 We strongly recommend that you instead collect host and service data in a batch and store it in a redis cache. 
-The interval of the batch collecting is configurable, but considering that most checks in Monitor are often done i 5 minutes interval. 
-So collecting every one minute is more the enough. 
+The interval of the batch collecting is configurable, but considering that most checks in Monitor are often done in 5 minutes interval. 
+So collecting every minute should be more tham enough. 
 To use caching just add this to your `config.yml`:
 ```
 cache:
@@ -160,7 +160,8 @@ cache:
   # The time to live for the stored Monitor objects in the redis cache
   ttl: 300
 ```
-
+> Redis must installed on some host on the network and be accessible from the server running monitor-exporter
+ 
 # Logging
 The log stream is configure in the above config. If `logfile` is not set the logs will go to stdout.
 
