@@ -42,23 +42,24 @@ class Perfdata:
 
     async def get_perfdata(self):
         # Use _get_data method to fetch performance data from Monitor
-        data_json = await self.monitor.get_service_data(self.query_hostname)
+        #service_data = await self.monitor.get_service_data(self.query_hostname)
 
         # Use prometheus_labels method to fetch extra labels
         host_data = await self.monitor.get_host_data(self.query_hostname)
+
         custom_vars = {}
         host_state = None
         host_check_command = None
         host_perf_data = None
 
-        for var in host_data:
-            custom_vars = var['custom_variables']
-            if 'state' in var:
-                host_state =  var['state']
-            if 'perf_data' in var:
-                host_perf_data = var['perf_data']
-            if 'check_command' in var:
-                host_check_command = var['check_command']
+        if 'custom_variables' in host_data:
+            custom_vars = host_data['custom_variables']
+        if 'state' in host_data:
+            host_state =  host_data['state']
+        if 'perf_data' in host_data:
+            host_perf_data = host_data['perf_data']
+        if 'check_command' in host_data:
+            host_check_command = host_data['check_command']
 
         host_custom_vars_labels = self.prometheus_labels(custom_vars)
 
@@ -102,7 +103,11 @@ class Perfdata:
             '_sum':0
         }
 
-        for item in data_json:
+        service_data = []
+        if 'services' in host_data:
+            service_data = host_data['services']
+
+        for item in service_data:
             check_command = check_command_regex.search(item['check_command']).group()
             labels = {HOSTNAME: item['host']['name'], SERVICE: item['description']}
             # Add the host custom variables
