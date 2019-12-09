@@ -242,8 +242,17 @@ scrape_configs:
 
 The switch -p enable setting of the port.
 
-## Production with gunicorn
-Running with default config.yml. The default location is current directory
+## Production deployment 
+The are a number of ASGI containers that can be can use to deploy *monitor-exporter*. The dependency for these are not
+included in the distribution.
+
+### Deploying with gunicorn
+First install the guincorn dependency into the python environment.
+
+    pip install gunicorn
+    pip install uvicorn
+      
+Running with the default config.yml. The default location is current directory.
 
     gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app()"
 
