@@ -69,11 +69,20 @@ class Perfdata:
         labels = {HOSTNAME: self.query_hostname}
         labels.update(host_custom_vars_labels)
 
+        # Additional labels for downtime,
+        if 'downtime' in host_data:
+            labels['downtime'] = str(host_data['downtime']).lower()
+        if 'address' in host_data:
+            labels['address'] = host_data['address']
+        if 'acknowledged' in host_data:
+            labels['acknowledged'] = str(host_data['acknowledged'])
+
         if host_state != None:
             normilized_value, prometheus_key_with_labels = self.create_metric('host', labels,
                                                                                 'state',
                                                                                 {'value':int(host_state)})
             self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
+
         if host_check_command and host_perf_data:
             labels.update({SERVICE:'isalive'})
             for perf_data_key, perf_data_value in host_perf_data.items():
@@ -113,17 +122,14 @@ class Perfdata:
             # Add the host custom variables
             labels.update(host_custom_vars_labels)
 
-            if 'perf_data' in item and item['perf_data']:
-
-                perfdata = item['perf_data']
-
-                # For each perfname in perfdata
-                for perf_data_key, perf_data_value in perfdata.items():
-                    # get the value and unit
-                    normilized_value, prometheus_key_with_labels = self.create_metric(check_command, labels,
-                                                                                            perf_data_key,
-                                                                                            perf_data_value)
-                    self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
+            if 'downtime' in host_data and bool(host_data['downtime']):
+                labels['downtime'] = str(host_data['downtime']).lower()
+            elif 'downtime' in item:
+                labels['downtime'] = str(item['downtime']).lower()
+            if 'address' in host_data:
+                labels['address'] =  host_data['address']
+            if 'acknowledged' in item:
+                labels['acknowledged'] = str(item['acknowledged'])
 
             # For state if exists 0 OK, 1 Warning and 2 Critical
             if 'state' in item:
@@ -141,6 +147,20 @@ class Perfdata:
                     service_state_histo['+Inf'] += 1
                 service_state_histo['_count'] += 1
                 service_state_histo['_sum'] += int(item['state'])
+
+            if 'perf_data' in item and item['perf_data']:
+
+                perfdata = item['perf_data']
+
+                # For each perfname in perfdata
+                for perf_data_key, perf_data_value in perfdata.items():
+                    # get the value and unit
+                    normilized_value, prometheus_key_with_labels = self.create_metric(check_command, labels,
+                                                                                            perf_data_key,
+                                                                                            perf_data_value)
+                    self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
+
+
 
         #self.create_service_state_histogram(service_state_histo, labels={HOSTNAME: self.query_hostname})
 
@@ -226,7 +246,7 @@ class Perfdata:
             custom_vars = var['custom_variables']
 
         '''
-        #monitor_custom_vars = await self.monitor.get_custom_vars(self.query_hostname)
+
         new_labels = {}
 
         if monitor_custom_vars:
