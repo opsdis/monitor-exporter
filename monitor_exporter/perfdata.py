@@ -144,7 +144,7 @@ class Perfdata:
                 elif int(item['state']) == 2:
                     service_state_histo['bucket']['2'] += 1
                 else:
-                    service_state_histo['+Inf'] += 1
+                    service_state_histo['bucket']['+Inf'] += 1
                 service_state_histo['_count'] += 1
                 service_state_histo['_sum'] += int(item['state'])
 

@@ -5,8 +5,8 @@ monitor-exporter
 
 # Overview
 
-The monitor-exporter utilises ITRS, former OP5, Monitor's API to fetch service-based performance data and publish it in 
-a way that lets Prometheus scrape the performance data and state as metrics.
+The monitor-exporter utilises ITRS, former OP5, Monitor's API to fetch host and service-based performance data and 
+publish it in a way that lets Prometheus scrape the performance data and state as metrics.
 
 Benefits:
 
@@ -43,6 +43,7 @@ monitor_check_host_alive_pl_ratio{hostname="foo.com", environment="production", 
 
 > Service label will always be `isalive`
 
+
 ## State 
 State metrics is reported for both hosts and services. 
 State metrics is reported as value 0 (okay), 1 (warning), 2 (critical) and 4 (unknown). 
@@ -59,10 +60,18 @@ For services the metric name is:
 ## Metric labels
 The monitor-exporter adds a number of labels to each metric:
 
-- hostname - is the `host_name` in Monitor
-- service - is the `service_description` in Monitor
+- **hostname** - is the `host_name` in Monitor
+- **service** - is the `service_description` in Monitor
+- **downtime** - if the host or service is currently in a downtime period - true/false. If the host is in downtime its 
+services are also in downtime.
+- **address** - the hosts real address
+- **acknowledged** - is applicable if a host or service is in warning or critical and have been acknowledged by operations -
+ 0/1 where 1 is acknowledged.
 
-Optionally the monitor-exporter can be configured to pass specific custom variables (configured on the Monitor host) to Prometheus.
+Optionally the monitor-exporter can be configured to pass all or specific custom variables configured in Monitor as 
+labels Prometheus. 
+
+> Any host based custom variables that is used as labels is also set for its services.   
 
 > Labels created from custom variables are all transformed to lowercase.
 
@@ -71,8 +80,10 @@ As described above, the default naming of the Prometheus name is:
 
     monitor_<check_command>_<perfname>_<unit>
 
-For some checks this does not work well like for the `self_check_by_snmp_disk_usage_v3` check command where the perfname are the unique mount paths.
-For checks where the perfname is defined depending on a specific name, you can change it so the perfname becomes a label instead.
+For some check commands this does not work well like for the `self_check_by_snmp_disk_usage_v3` check command where the 
+perfname are the unique mount paths.
+For checks where the perfname is defined depending on a specific name, you can change it so the perfname becomes a 
+label instead.
 This is defined in the configuration like:
 
 ```yaml
@@ -88,11 +99,11 @@ So if the check command is `self_check_by_snmp_disk_usage_v3`, the Prometheus me
 
     monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"} 48356130816.0
 
-If we did not make this translation, we would get the following:
+If we did not make this transformation, we would get the following:
 
     monitor_self_check_by_snmp_disk_usage_v3_slash_used_bytes{hostname="monitor", service="Disk usage /"} 48356130816.0
 
- Which is not so good since we get specific metric name from the perfname.
+ Which is bad since we get specific metric name from the perfname.
 
 > Please be aware of naming conventions for perfname and services, especially when they include a name depending on
 > what is checked like a mountpoint or disk name.
