@@ -99,6 +99,7 @@ class Perfdata:
         '''
         service_state_histo = {
             'bucket':{'0':0,'1':0,'2':0,'+Inf':0},
+            'bucket':{'0':0,'1':0,'2':0,'3':0,'+Inf':0},
             '_count':0,
             '_sum':0
         }
@@ -137,6 +138,8 @@ class Perfdata:
                     service_state_histo['bucket']['1'] += 1
                 elif int(item['state']) == 2:
                     service_state_histo['bucket']['2'] += 1
+                elif int(item['state']) == 3:
+                    service_state_histo['bucket']['3'] += 1
                 else:
                     service_state_histo['+Inf'] += 1
                 service_state_histo['_count'] += 1
