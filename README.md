@@ -3,6 +3,29 @@
 monitor-exporter
 -----------------------
 
+- [Overview](#overview)
+- [Metrics naming](#metrics-naming)
+  * [Service performance data](#service-performance-data)
+  * [Host performance data](#host-performance-data)
+  * [State](#state)
+  * [Metric labels](#metric-labels)
+  * [Performance metrics name to labels](#performance-metrics-name-to-labels)
+- [Configuration](#configuration)
+  * [monitor-exporter](#monitor-exporter-1)
+- [Using Redis cache](#using-redis-cache)
+- [Logging](#logging)
+- [Prometheus configuration](#prometheus-configuration)
+  * [Static config](#static-config)
+  * [File discovery config for usage with `monitor-promdiscovery`](#file-discovery-config-for-usage-with--monitor-promdiscovery-)
+- [Installing](#installing)
+- [Running](#running)
+  * [Development with Quart built in webserver](#development-with-quart-built-in-webserver)
+  * [Production deployment](#production-deployment)
+    + [Deploying with gunicorn](#deploying-with-gunicorn)
+  * [Test the connection](#test-the-connection)
+- [System requirements](#system-requirements)
+- [License](#license)
+
 # Overview
 
 The monitor-exporter utilises ITRS, former OP5, Monitor's API to fetch host and service-based performance data and 
@@ -31,7 +54,7 @@ For example the check command `check_ping` will result in two metrics:
     monitor_check_ping_rta_seconds
     monitor_check_ping_pl_ratio
     
-### Host performance data
+## Host performance data
 In Monitor the host also have a check to verify the state of the host. The metric name is always called `monitor_check_host_alive`.
 If this check as multiple performance values they will be reported as individual metrics, e.g.
 
