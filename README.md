@@ -3,10 +3,33 @@
 monitor-exporter
 -----------------------
 
+- [Overview](#overview)
+- [Metrics naming](#metrics-naming)
+  * [Service performance data](#service-performance-data)
+  * [Host performance data](#host-performance-data)
+  * [State](#state)
+  * [Metric labels](#metric-labels)
+  * [Performance metrics name to labels](#performance-metrics-name-to-labels)
+- [Configuration](#configuration)
+  * [monitor-exporter](#monitor-exporter-1)
+- [Using Redis cache](#using-redis-cache)
+- [Logging](#logging)
+- [Prometheus configuration](#prometheus-configuration)
+  * [Static config](#static-config)
+  * [File discovery config for usage with `monitor-promdiscovery`](#file-discovery-config-for-usage-with--monitor-promdiscovery-)
+- [Installing](#installing)
+- [Running](#running)
+  * [Development with Quart built in webserver](#development-with-quart-built-in-webserver)
+  * [Production deployment](#production-deployment)
+    + [Deploying with gunicorn](#deploying-with-gunicorn)
+  * [Test the connection](#test-the-connection)
+- [System requirements](#system-requirements)
+- [License](#license)
+
 # Overview
 
-The monitor-exporter utilises ITRS, former OP5, Monitor's API to fetch service-based performance data and publish it in 
-a way that lets Prometheus scrape the performance data and state as metrics.
+The monitor-exporter utilises ITRS, former OP5, Monitor's API to fetch host and service-based performance data and 
+publish it in a way that lets Prometheus scrape the performance data and state as metrics.
 
 Benefits:
 
@@ -31,7 +54,7 @@ For example the check command `check_ping` will result in two metrics:
     monitor_check_ping_rta_seconds
     monitor_check_ping_pl_ratio
     
-### Host performance data
+## Host performance data
 In Monitor the host also have a check to verify the state of the host. The metric name is always called `monitor_check_host_alive`.
 If this check as multiple performance values they will be reported as individual metrics, e.g.
 
@@ -42,6 +65,7 @@ monitor_check_host_alive_pl_ratio{hostname="foo.com", environment="production", 
 ```
 
 > Service label will always be `isalive`
+
 
 ## State 
 State metrics is reported for both hosts and services. 
@@ -59,10 +83,18 @@ For services the metric name is:
 ## Metric labels
 The monitor-exporter adds a number of labels to each metric:
 
-- hostname - is the `host_name` in Monitor
-- service - is the `service_description` in Monitor
+- **hostname** - is the `host_name` in Monitor
+- **service** - is the `service_description` in Monitor
+- **downtime** - if the host or service is currently in a downtime period - true/false. If the host is in downtime its 
+services are also in downtime.
+- **address** - the hosts real address
+- **acknowledged** - is applicable if a host or service is in warning or critical and have been acknowledged by operations -
+ 0/1 where 1 is acknowledged.
 
-Optionally the monitor-exporter can be configured to pass specific custom variables (configured on the Monitor host) to Prometheus.
+Optionally the monitor-exporter can be configured to pass all or specific custom variables configured in Monitor as 
+labels Prometheus. 
+
+> Any host based custom variables that is used as labels is also set for its services.   
 
 > Labels created from custom variables are all transformed to lowercase.
 
@@ -71,8 +103,10 @@ As described above, the default naming of the Prometheus name is:
 
     monitor_<check_command>_<perfname>_<unit>
 
-For some checks this does not work well like for the `self_check_by_snmp_disk_usage_v3` check command where the perfname are the unique mount paths.
-For checks where the perfname is defined depending on a specific name, you can change it so the perfname becomes a label instead.
+For some check commands this does not work well like for the `self_check_by_snmp_disk_usage_v3` check command where the 
+perfname are the unique mount paths.
+For checks where the perfname is defined depending on a specific name, you can change it so the perfname becomes a 
+label instead.
 This is defined in the configuration like:
 
 ```yaml
@@ -88,11 +122,11 @@ So if the check command is `self_check_by_snmp_disk_usage_v3`, the Prometheus me
 
     monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"} 48356130816.0
 
-If we did not make this translation, we would get the following:
+If we did not make this transformation, we would get the following:
 
     monitor_self_check_by_snmp_disk_usage_v3_slash_used_bytes{hostname="monitor", service="Disk usage /"} 48356130816.0
 
- Which is not so good since we get specific metric name from the perfname.
+ Which is bad since we get specific metric name from the perfname.
 
 > Please be aware of naming conventions for perfname and services, especially when they include a name depending on
 > what is checked like a mountpoint or disk name.
@@ -242,8 +276,17 @@ scrape_configs:
 
 The switch -p enable setting of the port.
 
-## Production with gunicorn
-Running with default config.yml. The default location is current directory
+## Production deployment 
+The are a number of ASGI containers that can be can use to deploy *monitor-exporter*. The dependency for these are not
+included in the distribution.
+
+### Deploying with gunicorn
+First install the guincorn dependency into the python environment.
+
+    pip install gunicorn
+    pip install uvicorn
+      
+Running with the default config.yml. The default location is current directory.
 
     gunicorn --access-logfile /dev/null -w 4 -k uvicorn.workers.UvicornWorker "wsgi:create_app()"
 
