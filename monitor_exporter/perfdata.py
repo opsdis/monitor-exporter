@@ -41,8 +41,6 @@ class Perfdata:
         self.perfdatadict = {}
 
     async def get_perfdata(self):
-        # Use _get_data method to fetch performance data from Monitor
-        #service_data = await self.monitor.get_service_data(self.query_hostname)
 
         # Use prometheus_labels method to fetch extra labels
         host_data = await self.monitor.get_host_data(self.query_hostname)
@@ -55,7 +53,7 @@ class Perfdata:
         if 'custom_variables' in host_data:
             custom_vars = host_data['custom_variables']
         if 'state' in host_data:
-            host_state =  host_data['state']
+            host_state = host_data['state']
         if 'perf_data' in host_data:
             host_perf_data = host_data['perf_data']
         if 'check_command' in host_data:
@@ -79,37 +77,22 @@ class Perfdata:
 
         if host_state != None:
             normilized_value, prometheus_key_with_labels = self.create_metric('host', labels,
-                                                                                'state',
-                                                                                {'value':int(host_state)})
+                                                                              'state',
+                                                                              {'value': int(host_state)})
             self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
 
         if host_check_command and host_perf_data:
-            labels.update({SERVICE:'isalive'})
+            labels.update({SERVICE: 'isalive'})
             for perf_data_key, perf_data_value in host_perf_data.items():
                 normilized_value, prometheus_key_with_labels = self.create_metric(host_check_command, labels,
-                                                                              perf_data_key,
-                                                                              perf_data_value)
+                                                                                  perf_data_key,
+                                                                                  perf_data_value)
                 self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
 
-
-
-    # Select items that has performance data and skip items that doesn't
-        '''
-        [{
-        'host': {'name': 'google.se'}, 
-        'description': 'pingit', 
-        'perf_data': {
-            'rta': {'value': 2.327, 'unit': 'ms', 'warn': '0.000', 'crit': '500.000', 'min': 0}, 
-            'pl': {'value': 0, 'unit': '%', 'warn': '40', 'crit': '80', 'min': 0, 'max': 100}
-            }, 
-        'check_command': 'check_ping', 
-        'state': 1
-        }]
-        '''
         service_state_histo = {
-            'bucket':{'0':0,'1':0,'2':0,'+Inf':0},
-            '_count':0,
-            '_sum':0
+            'bucket': {'0': 0, '1': 0, '2': 0, '+Inf': 0},
+            '_count': 0,
+            '_sum': 0
         }
 
         service_data = []
@@ -127,14 +110,14 @@ class Perfdata:
             elif 'downtime' in item:
                 labels['downtime'] = str(item['downtime']).lower()
             if 'address' in host_data:
-                labels['address'] =  host_data['address']
+                labels['address'] = host_data['address']
             if 'acknowledged' in item:
                 labels['acknowledged'] = str(item['acknowledged'])
 
             # For state if exists 0 OK, 1 Warning and 2 Critical
             if 'state' in item:
                 normilized_value, prometheus_key_with_labels = self.create_metric_state(check_command, labels,
-                                                                                        {'value':int(item['state'])})
+                                                                                        {'value': int(item['state'])})
                 self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
 
                 if int(item['state']) == 0:
@@ -156,28 +139,26 @@ class Perfdata:
                 for perf_data_key, perf_data_value in perfdata.items():
                     # get the value and unit
                     normilized_value, prometheus_key_with_labels = self.create_metric(check_command, labels,
-                                                                                            perf_data_key,
-                                                                                            perf_data_value)
+                                                                                      perf_data_key,
+                                                                                      perf_data_value)
                     self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
 
-
-
-        #self.create_service_state_histogram(service_state_histo, labels={HOSTNAME: self.query_hostname})
+        # self.create_service_state_histogram(service_state_histo, labels={HOSTNAME: self.query_hostname})
 
         return self.perfdatadict
 
-    def create_service_state_histogram(self, histo: dict, labels:dict):
+    def create_service_state_histogram(self, histo: dict, labels: dict):
         name = 'service_state_by_host_bucket'
         for bucket, count in histo['bucket'].items():
             bucket_label = labels
             bucket_label['le'] = f"{bucket}"
-            mertic_name = self.prefix + name +'{' + Perfdata.labels_string(labels) +'}'
+            mertic_name = self.prefix + name + '{' + Perfdata.labels_string(labels) + '}'
             self.perfdatadict.update({mertic_name: str(count)})
 
         labels.pop('le')
-        mertic_name = self.prefix + name + '_count{' + Perfdata.labels_string(labels) +'}'
+        mertic_name = self.prefix + name + '_count{' + Perfdata.labels_string(labels) + '}'
         self.perfdatadict.update({mertic_name: str(histo['_count'])})
-        mertic_name = self.prefix + name + '_sum{' + Perfdata.labels_string(labels) +'}'
+        mertic_name = self.prefix + name + '_sum{' + Perfdata.labels_string(labels) + '}'
         self.perfdatadict.update({mertic_name: str(histo['_sum'])})
 
     def create_metric(self, check_command, labels, perf_data_key, perf_data_value):
@@ -192,7 +173,6 @@ class Perfdata:
                                              perf_data_key))
         prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels, prometheus_key)
         return normilized_value, prometheus_key_with_labels
-
 
     def create_metric_state(self, check_command, labels, state_value):
 
@@ -258,7 +238,7 @@ class Perfdata:
                 if key in self.configured_labels:
                     new_labels.update({self.configured_labels[key]: value})
                 elif self.monitor.is_all_custom_vars():
-                        new_labels.update({key: value})
+                    new_labels.update({key: value})
 
         return new_labels
 
