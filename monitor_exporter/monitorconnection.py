@@ -101,15 +101,20 @@ class MonitorConfig(object, metaclass=Singleton):
                                               '&limit=' + self.default_limit
             self.url_get_host = self.host + \
                                             '/api/filter/query?query=[hosts]%20name="{}' \
-                                            '"&columns=custom_variables,perf_data,check_command,state'
+                                            '"&columns=address,custom_variables,perf_data,check_command,state'
 
             self.url_query_all_service_data = self.host + \
                                                   '/api/filter/{}?query=[services]%20all' \
-                                                  '&columns=host.name,description,perf_data,check_command,state'
+                                                  '&columns=host.name,description,perf_data,check_command,state,downtimes,acknowledged'
 
             self.url_query_all_host = self.host + \
                                                   '/api/filter/{}?query=[hosts]%20all' \
-                                                  '&columns=name,custom_variables,perf_data,check_command,state'
+                                                  '&columns=name,address,custom_variables,perf_data,check_command,state,downtimes,acknowledged'
+
+            self.url_downtime = self.host + \
+                              '/api/filter/{}?query=[downtimes]%20all' \
+                              '&columns=id,start_time,end_time,fixed'
+
 
     def get_user(self):
         return self.user
@@ -222,9 +227,24 @@ class MonitorConfig(object, metaclass=Singleton):
     def collect_cache(self, ttl: int):
 
         try:
+            # get downtime
+            now = int(time.time())
+            ongoing_downtime = set()
+            count_downtimes = self.get_sync(self.url_downtime.format('count'))
+            if 'count' in count_downtimes and int(count_downtimes['count']) > 0:
+                count = count_downtimes['count']
+                downtimes=[]
+                downtimes = self.get_sync(self.url_downtime.format('query') + '&limit=' + str(count))
+                for downtime in downtimes:
+
+                    if downtime['start_time'] <= now <= downtime['end_time']:
+                        # downtime['id'] is an int -> make it to a str to compare in set
+                        ongoing_downtime.add(downtime['id'])
+
             # get the service data from Monitor
-            count_services = self.get_sync(self.url_query_all_service_data.format('count'))
             start_time = time.time()
+            count_services = self.get_sync(self.url_query_all_service_data.format('count'))
+
 
             hosts_to_services = {}
 
@@ -236,7 +256,12 @@ class MonitorConfig(object, metaclass=Singleton):
                     if service_item['host']['name'] not in hosts_to_services:
                         hosts_to_services[service_item['host']['name']] = []
                     host_name = service_item['host']['name']
-                    # del service_item['host']
+                    downtime = set(service_item.pop('downtimes'))
+                    if downtime & ongoing_downtime:
+                        service_item['downtime'] = True
+                    else:
+                        service_item['downtime'] = False
+
                     hosts_to_services[host_name].append(service_item)
 
             # get the host data from Monitor
@@ -253,6 +278,12 @@ class MonitorConfig(object, metaclass=Singleton):
             p = r.pipeline()
             for host in hosts:
                 host_name = host['name']
+                downtime = set(host.pop('downtimes'))
+                if downtime & ongoing_downtime:
+                    host['downtime'] = True
+                else:
+                    host['downtime'] = False
+
                 hosts_set.add(host_name)
                 if host_name in hosts_to_services:
                     host['services'] = hosts_to_services[host_name]
@@ -262,7 +293,7 @@ class MonitorConfig(object, metaclass=Singleton):
 
             # Build host index
             r = self.get_cache_connection()
-            existing_hosts= r.smembers(self.key_host_index())
+            existing_hosts = r.smembers(self.key_host_index())
             log.info(f"Existing hosts {len(existing_hosts)}")
             log.info(f"Monitor hosts {len(hosts_set)}")
 
@@ -271,12 +302,27 @@ class MonitorConfig(object, metaclass=Singleton):
             log.info(f"Delete hosts {len(del_hosts)}")
             log.info(f"Add hosts {len(add_hosts)}")
 
+            existing_downtimes = set(map(int, r.smembers(self.key_downtime_index())))
+            log.info(f"Existing downtimes {len(existing_downtimes)}")
+            log.info(f"Monitor downtimes {len(ongoing_downtime)}")
+            del_downtimes = existing_downtimes - ongoing_downtime
+            add_downtimes = ongoing_downtime - existing_downtimes
+            log.info(f"Delete downtimes {len(del_downtimes)}")
+            log.info(f"Add downtimes {len(add_downtimes)}")
+
             p = r.pipeline()
             for host in add_hosts:
                 p.sadd(self.key_host_index(), host)
             for host in del_hosts:
                 p.srem(self.key_host_index(), host)
+
+            for downtime in add_downtimes:
+                p.sadd(self.key_downtime_index(), downtime)
+            for downtime in del_downtimes:
+                p.srem(self.key_downtime_index(), downtime)
+
             p.expire(self.key_host_index(), ttl)
+            p.expire(self.key_downtime_index(), ttl)
             p.execute()
 
             end_time = time.time()
@@ -296,5 +342,8 @@ class MonitorConfig(object, metaclass=Singleton):
     def key_host_index(self) -> str:
         return "hosts"
 
+    def key_downtime_index(self) -> str:
+        return "downtimes"
+
     def get_cache_connection(self):
-        return redis.Redis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth)
+        return redis.Redis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)

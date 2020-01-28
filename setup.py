@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='monitor-exporter',
-    version='0.1.0',
+    version='0.2.1',
     packages=find_packages(),
     author='thenodon',
     author_email='anders@opsdis.com',

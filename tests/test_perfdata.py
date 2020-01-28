@@ -36,7 +36,7 @@ class TestMonitor(unittest.TestCase):
 
         # Create Mock
         mcon.get_host_data = AsyncMock(return_value=get_perf_mock_file())
-        #mcon.get_perfdata = AsyncMock(return_value=get_custom_vars_mock_file())
+
 
         perf = perfdata.Perfdata(mcon, 'google.se')
 
