@@ -1,21 +1,21 @@
-# Port can be overridden by using -p if running development flask
-#port: 9631
-cache:
-  # Use redis for cache - future may support others
-  # Values below is the default
-  redis:
-    # redis host
-    host: localhost
-    # redis port
-    port: 6379
-    # the auth string used in redis
-    #auth: secretstuff
-    # the redis db to use
-    db: 0
-  # The interval to collect data from Monitor
-  interval: 60
-  # The time to live for the stored Monitor objects in the redis cache
-  ttl: 300
+# # Port can be overridden by using -p if running development flask
+# #port: 9631
+# cache:
+#   # Use redis for cache - future may support others
+#   # Values below is the default
+#   redis:
+#     # redis host
+#     host: localhost
+#     # redis port
+#     port: 6379
+#     # the auth string used in redis
+#     #auth: secretstuff
+#     # the redis db to use
+#     db: 0
+#   # The interval to collect data from Monitor
+#   interval: 60
+#   # The time to live for the stored Monitor objects in the redis cache
+#   ttl: 300
 
 op5monitor:
   # The url to the Monitor server

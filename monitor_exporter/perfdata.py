@@ -87,18 +87,17 @@ class Perfdata:
     # Select items that has performance data and skip items that doesn't
         '''
         [{
-        'host': {'name': 'google.se'}, 
-        'description': 'pingit', 
+        'host': {'name': 'google.se'},
+        'description': 'pingit',
         'perf_data': {
-            'rta': {'value': 2.327, 'unit': 'ms', 'warn': '0.000', 'crit': '500.000', 'min': 0}, 
+            'rta': {'value': 2.327, 'unit': 'ms', 'warn': '0.000', 'crit': '500.000', 'min': 0},
             'pl': {'value': 0, 'unit': '%', 'warn': '40', 'crit': '80', 'min': 0, 'max': 100}
-            }, 
-        'check_command': 'check_ping', 
+            },
+        'check_command': 'check_ping',
         'state': 1
         }]
         '''
         service_state_histo = {
-            'bucket':{'0':0,'1':0,'2':0,'+Inf':0},
             'bucket':{'0':0,'1':0,'2':0,'3':0,'+Inf':0},
             '_count':0,
             '_sum':0

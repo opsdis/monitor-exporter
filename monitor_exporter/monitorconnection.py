@@ -25,6 +25,7 @@ import redis
 import time
 from requests.auth import HTTPBasicAuth
 import monitor_exporter.log as log
+import os
 
 
 class Singleton(type):
@@ -80,9 +81,9 @@ class MonitorConfig(object, metaclass=Singleton):
         self.allow_all_custom_vars = False
 
         if config:
-            self.user = config[MonitorConfig.config_entry]['user']
-            self.passwd = config[MonitorConfig.config_entry]['passwd']
-            self.host = config[MonitorConfig.config_entry]['url']
+            self.user = os.environ.get('MONITOR_USERNAME', config[MonitorConfig.config_entry]['user'])
+            self.passwd = os.environ.get('MONITOR_PASSWORD', config[MonitorConfig.config_entry]['passwd'])
+            self.host = os.environ.get('MONITOR_URL', config[MonitorConfig.config_entry]['url'])
             if 'metric_prefix' in config[MonitorConfig.config_entry]:
                 self.prefix = config['op5monitor']['metric_prefix'] + '_'
             if 'host_custom_vars' in config[MonitorConfig.config_entry]:
