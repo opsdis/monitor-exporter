@@ -90,7 +90,7 @@ class Perfdata:
                 self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
 
         service_state_histo = {
-            'bucket': {'0': 0, '1': 0, '2': 0, '+Inf': 0},
+            'bucket': {'0': 0, '1': 0, '2': 0, '3': 0, '+Inf': 0},
             '_count': 0,
             '_sum': 0
         }
@@ -192,14 +192,17 @@ class Perfdata:
         perf_unit = ''
         perf_warn = ''
         perf_crit = ''
-        if 'value' in value:
-            perf_value = value['value']
-        if 'unit' in value:
-            perf_unit = value['unit']
-        if 'warn' in value:
-            perf_warn = value['warn']
-        if 'crit' in value:
-            perf_crit = value['warn']
+        try:
+            if 'value' in value:
+                perf_value = value['value']
+            if 'unit' in value:
+                perf_unit = value['unit']
+            if 'warn' in value:
+                perf_warn = value['warn']
+            if 'crit' in value:
+                perf_crit = value['crit']
+        except KeyError:
+            print('Could not find any perfdata labels')
 
         return perf_unit, perf_value, perf_warn, perf_crit
 
