@@ -19,7 +19,9 @@
 
 """
 import re
+
 import urllib3
+
 import monitor_exporter.monitorconnection as Monitor
 
 # Disable InsecureRequestWarning
@@ -75,7 +77,7 @@ class Perfdata:
         if 'acknowledged' in host_data:
             labels['acknowledged'] = str(host_data['acknowledged'])
 
-        if host_state != None:
+        if host_state:
             normilized_value, prometheus_key_with_labels = self.create_metric('host', labels,
                                                                               'state',
                                                                               {'value': int(host_state)})
@@ -216,7 +218,7 @@ class Perfdata:
         return prometheus_key
 
     def prometheus_labels(self, monitor_custom_vars):
-        '''
+        """
         Extract metric labels from custom_vars.
         Only defined custom vars are selected - see config.yml
 
@@ -225,7 +227,7 @@ class Perfdata:
         for var in custom_vars_json:
             custom_vars = var['custom_variables']
 
-        '''
+        """
 
         new_labels = {}
 
