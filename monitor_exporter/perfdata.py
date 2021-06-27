@@ -77,7 +77,7 @@ class Perfdata:
         if 'acknowledged' in host_data:
             labels['acknowledged'] = str(host_data['acknowledged'])
 
-        if host_state:
+        if host_state != None:
             normilized_value, prometheus_key_with_labels = self.create_metric('host', labels,
                                                                               'state',
                                                                               {'value': int(host_state)})
