@@ -19,14 +19,15 @@
 
 """
 import asyncio
-from quart import Quart, request, Response, jsonify, Blueprint
+
 from prometheus_client import (CONTENT_TYPE_LATEST, Counter)
+from quart import request, Response, jsonify, Blueprint
 
-from monitor_exporter.perfdata import Perfdata
-import monitor_exporter.monitorconnection as monitorconnection
 import monitor_exporter.log as log
+import monitor_exporter.monitorconnection as monitorconnection
+from monitor_exporter.perfdata import Perfdata
 
-app = Blueprint("prom",__name__)
+app = Blueprint("prom", __name__)
 total_requests = Counter('requests', 'Total requests to monitor-exporter endpoint')
 
 
@@ -57,24 +58,26 @@ async def get_metrics():
 
 @app.route("/health", methods=['GET'])
 def get_health():
-    return chech_healthy()
+    return check_healthy()
 
 
 def before_request_func(request):
     call_status = {'remote_addr': request.remote_addr, 'url': request.url}
     log.info('Access', call_status)
 
+
 @app.after_request
 def after_request_func(response):
     total_requests.inc()
 
-    call_status = {'content_length': response.content_length, 'status': response.status_code, 'count': total_requests._value.get()}
+    call_status = {'content_length': response.content_length, 'status': response.status_code,
+                   'count': total_requests._value.get()}
     log.info('Response', call_status)
 
     return response
 
 
-def chech_healthy() -> Response:
+def check_healthy() -> Response:
     resp = jsonify({'status': 'ok'})
     resp.status_code = 200
     return resp
