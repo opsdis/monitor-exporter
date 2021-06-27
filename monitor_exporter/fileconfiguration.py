@@ -21,6 +21,7 @@
 
 import yaml
 
+
 def read_config(config_file: str) -> dict:
     """
     Read configuration file

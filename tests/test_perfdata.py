@@ -51,8 +51,10 @@ class TestMonitor(unittest.TestCase):
         self.assertTrue(
             'monitor_check_ping_rta_seconds{hostname="google.se", service="pingit", environment="production"}' in monitor_data)
 
+
 def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
+
 
 def AsyncMock(*args, **kwargs):
     m = mock.MagicMock(*args, **kwargs)

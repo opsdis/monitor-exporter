@@ -283,8 +283,8 @@ included in the distribution.
 ### Deploying with gunicorn
 First install the guincorn dependency into the python environment.
 
-    pip install gunicorn
-    pip install uvicorn
+    pip install gunicorn==20.1.0
+    pip install uvicorn==0.14.0
       
 Running with the default config.yml. The default location is current directory.
 

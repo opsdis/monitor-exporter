@@ -20,16 +20,19 @@
 """
 
 import argparse
-import monitor_exporter.log as log
-import monitor_exporter.fileconfiguration as config
-import monitor_exporter.proxy as proxy
+import asyncio
 from quart import Quart
-import monitor_exporter.monitorconnection as monitorconnection
-
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+
+import monitor_exporter.fileconfiguration as config
+import monitor_exporter.log as log
+import monitor_exporter.monitorconnection as monitorconnection
+import monitor_exporter.proxy as proxy
 
 default_interval = 60
 default_ttl = 300
+
 
 def start():
     """
@@ -62,6 +65,10 @@ def start():
     log.configure_logger(configuration)
 
     monitorconnection.MonitorConfig(configuration)
+    # Need to create a event loop for apscheduler
+    loop = asyncio.new_event_loop()
+    # Set the event loop
+    asyncio.set_event_loop(loop)
 
     start_scheduler(configuration)
 
@@ -70,8 +77,9 @@ def start():
     app = Quart(__name__)
 
     app.register_blueprint(proxy.app, url_prefix='')
-    app.run(host='0.0.0.0', port=port)
-    log.info('Starting web app on port: ' + str(port))
+
+    # Use the existing event loop
+    app.run(host='0.0.0.0', port=port, loop=loop)
 
 
 def create_app(config_path=None):
@@ -101,8 +109,8 @@ def create_app(config_path=None):
 
 
 def start_scheduler(configuration):
-
     if 'cache' in configuration:
+
         scheduler = AsyncIOScheduler()
         seconds = default_interval if configuration.get('cache').get('interval') is None \
             else configuration.get('cache').get('interval')
@@ -111,6 +119,7 @@ def start_scheduler(configuration):
         log.info(f"Monitor collector will run every {seconds} sec")
         # Run once at start up
         monitorconnection.MonitorConfig().collect_cache(ttl)
-        scheduler.add_job(monitorconnection.MonitorConfig().collect_cache, trigger='interval', args=[ttl], seconds=seconds)
+        scheduler.add_job(monitorconnection.MonitorConfig().collect_cache, trigger='interval', args=[ttl],
+                          seconds=seconds)
         scheduler.start()
 

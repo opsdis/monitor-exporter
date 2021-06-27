@@ -1,1 +1,4 @@
-include wsgi.py
+include README.md
+include COPYING
+include requirements.txt
+include config.yml

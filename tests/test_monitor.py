@@ -1,12 +1,14 @@
+import asyncio
 import unittest
 from unittest import mock
+import pytest
 import os
 import monitor_exporter.monitorconnection as Monitor
 import monitor_exporter.fileconfiguration as fileconfig
 
 
 def mocked_monitorconnection_get(*args, **kwargs):
-    yield ({"TEST": "test"})
+    yield {"TEST": "test"}
 
 
 class TestMonitor(unittest.TestCase):
@@ -31,8 +33,13 @@ class TestMonitor(unittest.TestCase):
         mcon2 = Monitor.MonitorConfig(self.config)
         self.assertNotEqual(id(mcon1), id(mcon2))
 
+
     @mock.patch('monitor_exporter.monitorconnection.MonitorConfig.get', side_effect=mocked_monitorconnection_get())
     def test_get_perfdata_from_monitor(self, mock_get):
         mcon = Monitor.MonitorConfig(self.config)
-        response = mcon.get('sunet.se')
+        response = _run(mcon.get('sunet.se'))
         self.assertEqual(response, {"TEST": "test"})
+
+
+def _run(coro):
+    return asyncio.get_event_loop().run_until_complete(coro)

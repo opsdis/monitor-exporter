@@ -26,7 +26,6 @@ from pythonjsonlogger import jsonlogger
 logger = logging.getLogger('monitor-exporter')
 
 
-# def configure_logger(log_level="INFO", log_filename=None, format=None):
 def configure_logger(config):
     log_filename, log_level = read_config(config)
 
@@ -35,9 +34,8 @@ def configure_logger(config):
     else:
         hdlr = logging.StreamHandler()
 
-    formatter = CustomJsonFormatter('(timestamp) (level) (name) (message)')
-    # formatter = jsonlogger.JsonFormatter('%(asctime) %(levelname) %(module) %(funcName) %(lineno) %(message)')
-    # formatter = logger.Formatter('%(asctime)s|%(levelname)s|%(message)s')
+    formatter = CustomJsonFormatter('%(timestamp)s %(level)s %(name)s %(message)s')
+
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
     logger.setLevel(log_level)
@@ -47,9 +45,6 @@ def configure_logger(config):
     existing = root.manager.loggerDict.keys()
     for log1 in [logging.getLogger(name) for name in existing]:
         log1.addHandler(hdlr)
-
-    #werkzeug = logging.getLogger('werkzeug')
-    #werkzeug.setLevel("WARNING")
 
 
 def read_config(config):
@@ -103,4 +98,3 @@ class CustomJsonFormatter(jsonlogger.JsonFormatter):
             log_record['level'] = log_record['level'].upper()
         else:
             log_record['level'] = record.levelname
-

@@ -18,12 +18,14 @@
     along with monitor-exporter.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-import aiohttp
-import requests
 import json
-import redis
 import time
+
+import aiohttp
+import redis
+import requests
 from requests.auth import HTTPBasicAuth
+
 import monitor_exporter.log as log
 
 
@@ -95,25 +97,27 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.allow_all_custom_vars = bool(config[MonitorConfig.config_entry]['all_custom_vars'])
 
             self.url_query_service_data = self.host + \
-                                              '/api/filter/query?query=[services]%20host.name="{}' \
-                                              '"&columns=host.name,description,perf_data,check_command,state' \
-                                              '&limit=' + self.default_limit
+                                          '/api/filter/query?query=[services]%20host.name="{}' \
+                                          '"&columns=host.name,description,perf_data,check_command,state' \
+                                          '&limit=' + self.default_limit
+
             self.url_get_host = self.host + \
-                                            '/api/filter/query?query=[hosts]%20name="{}' \
-                                            '"&columns=address,custom_variables,perf_data,check_command,state'
+                                '/api/filter/query?query=[hosts]%20name="{}' \
+                                '"&columns=address,custom_variables,perf_data,check_command,state'
 
             self.url_query_all_service_data = self.host + \
-                                                  '/api/filter/{}?query=[services]%20all' \
-                                                  '&columns=host.name,description,perf_data,check_command,state,downtimes,acknowledged'
+                                              '/api/filter/{}?query=[services]%20all' \
+                                              '&columns=host.name,description,perf_data,check_command,state,' \
+                                              'downtimes,acknowledged'
 
             self.url_query_all_host = self.host + \
-                                                  '/api/filter/{}?query=[hosts]%20all' \
-                                                  '&columns=name,address,custom_variables,perf_data,check_command,state,downtimes,acknowledged'
+                                      '/api/filter/{}?query=[hosts]%20all' \
+                                      '&columns=name,address,custom_variables,perf_data,check_command,state,' \
+                                      'downtimes,acknowledged'
 
             self.url_downtime = self.host + \
-                              '/api/filter/{}?query=[downtimes]%20all' \
-                              '&columns=id,start_time,end_time,fixed'
-
+                                '/api/filter/{}?query=[downtimes]%20all' \
+                                '&columns=id,start_time,end_time,fixed'
 
     def get_user(self):
         return self.user
@@ -136,7 +140,7 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_prefix(self):
         return self.prefix
 
-    def is_all_custom_vars(self)-> bool:
+    def is_all_custom_vars(self) -> bool:
         return self.allow_all_custom_vars
 
     def get_configured_labels(self):
@@ -151,13 +155,12 @@ class MonitorConfig(object, metaclass=Singleton):
     def get_perfname_to_label(self):
         return self.perfname_to_label
 
-
     async def get_host_data(self, hostname):
-        '''
+        """
         Build new URL and get custom_vars from Monitor
         :param hostname:
         :return:
-        '''
+        """
 
         if self.is_cache:
             host_data = await self.get_cache_host_data(hostname)
@@ -168,7 +171,6 @@ class MonitorConfig(object, metaclass=Singleton):
             host_data['services'] = service_data
 
         return host_data
-
 
     def get_sync(self, url):
         data_json = {}
@@ -223,8 +225,7 @@ class MonitorConfig(object, metaclass=Singleton):
         else:
             return {}
 
-    def collect_cache(self, ttl: int):
-
+    def collect_cache(self, ttl: int = 300):
         try:
             # get downtime
             now = int(time.time())
@@ -232,8 +233,9 @@ class MonitorConfig(object, metaclass=Singleton):
             count_downtimes = self.get_sync(self.url_downtime.format('count'))
             if 'count' in count_downtimes and int(count_downtimes['count']) > 0:
                 count = count_downtimes['count']
-                downtimes=[]
+
                 downtimes = self.get_sync(self.url_downtime.format('query') + '&limit=' + str(count))
+
                 for downtime in downtimes:
 
                     if downtime['start_time'] <= now <= downtime['end_time']:
@@ -243,7 +245,6 @@ class MonitorConfig(object, metaclass=Singleton):
             # get the service data from Monitor
             start_time = time.time()
             count_services = self.get_sync(self.url_query_all_service_data.format('count'))
-
 
             hosts_to_services = {}
 
@@ -327,7 +328,8 @@ class MonitorConfig(object, metaclass=Singleton):
             end_time = time.time()
 
             log.info(
-                f"Monitor collector exec time total {(end_time - start_time)} redis write {len(services_flat) + len(hosts)} objects in {end_time - start_redis_time}")
+                f"Monitor collector exec time total {(end_time - start_time)} "
+                f"redis write {len(services_flat) + len(hosts)} objects in {end_time - start_redis_time}")
         except Exception as err:
             log.error(
                 f"Monitor collector failed with {str(err)}")
@@ -345,4 +347,5 @@ class MonitorConfig(object, metaclass=Singleton):
         return "downtimes"
 
     def get_cache_connection(self):
-        return redis.Redis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth, decode_responses=True)
+        return redis.Redis(host=self.redis_host, port=self.redis_port, db=self.redis_db, password=self.redis_auth,
+                           decode_responses=True)
