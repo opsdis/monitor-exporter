@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.org/opsdis/monitor-exporter.svg?branch=master)](https://api.travis-ci.org/opsdis/monitor-exporter)
+[![PyPI version](https://badge.fury.io/py/monitor-exporter.svg)](https://badge.fury.io/py/monitor-exporter)
 
 monitor-exporter
 -----------------------
