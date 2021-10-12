@@ -296,6 +296,15 @@ Set the path to the configuration file.
 
 > Port for gunicorn is default 8000, but can be set with -b, e.g. `-b localhost:9631`
 
+## Docker
+Alt 1: Edit the config.yml in repo:
+
+    docker run -p 9631:9631 monitor-exporter
+
+Alt 2: Have config in separate location
+
+    docker run -v /path/to/config:/monitor-exporter/config/ -p 9631:9631 monitor-exporter
+
 ## Test the connection
 
 Check if the exporter is working.
