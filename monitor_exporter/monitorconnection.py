@@ -167,8 +167,11 @@ class MonitorConfig(object, metaclass=Singleton):
         else:
             host_data_list = await self.get(self.url_get_host.format(hostname))
             service_data = await self.get(self.url_query_service_data.format(hostname))
-            host_data = host_data_list[0]
-            host_data['services'] = service_data
+            if host_data_list:
+                host_data = host_data_list[0]
+                host_data['services'] = service_data
+            else:
+                host_data = list()
 
         return host_data
 
