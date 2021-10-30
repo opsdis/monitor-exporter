@@ -96,24 +96,30 @@ class MonitorConfig(object, metaclass=Singleton):
             if 'all_custom_vars' in config[MonitorConfig.config_entry]:
                 self.allow_all_custom_vars = bool(config[MonitorConfig.config_entry]['all_custom_vars'])
 
+            # Collect service data for a single host
             self.url_query_service_data = self.host + \
                                           '/api/filter/query?query=[services]%20host.name="{}' \
-                                          '"&columns=host.name,description,perf_data,check_command,state' \
+                                          '"&columns=host.name,description,perf_data,check_command,state,' \
+                                          'downtimes,acknowledged,is_flapping' \
                                           '&limit=' + self.default_limit
 
+            # Collect host data for a single host
             self.url_get_host = self.host + \
                                 '/api/filter/query?query=[hosts]%20name="{}' \
-                                '"&columns=address,custom_variables,perf_data,check_command,state'
+                                '"&columns=address,custom_variables,perf_data,check_command,state,' \
+                                'downtimes,acknowledged,is_flapping'
 
+            # Collect service data for all services - used in cache mode
             self.url_query_all_service_data = self.host + \
                                               '/api/filter/{}?query=[services]%20all' \
                                               '&columns=host.name,description,perf_data,check_command,state,' \
-                                              'downtimes,acknowledged'
+                                              'downtimes,acknowledged,is_flapping'
 
+            # # Collect host data for all hosts - used in cache mode
             self.url_query_all_host = self.host + \
                                       '/api/filter/{}?query=[hosts]%20all' \
                                       '&columns=name,address,custom_variables,perf_data,check_command,state,' \
-                                      'downtimes,acknowledged'
+                                      'downtimes,acknowledged,is_flapping'
 
             self.url_downtime = self.host + \
                                 '/api/filter/{}?query=[downtimes]%20all' \
@@ -229,6 +235,11 @@ class MonitorConfig(object, metaclass=Singleton):
             return {}
 
     def collect_cache(self, ttl: int = 300):
+        """
+        Collect Monitor data for all objects and store in cache
+        :param ttl:
+        :return:
+        """
         try:
             # get downtime
             now = int(time.time())

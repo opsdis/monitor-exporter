@@ -86,7 +86,7 @@ The monitor-exporter adds a number of labels to each metric:
 - **hostname** - is the `host_name` in Monitor
 - **service** - is the `service_description` in Monitor
 - **downtime** - if the host or service is currently in a downtime period - true/false. If the host is in downtime its 
-services are also in downtime.
+services are also in downtime. **Attention, downtime is only support if monitor-export is running in cache mode.**
 - **address** - the hosts real address
 - **acknowledged** - is applicable if a host or service is in warning or critical and have been acknowledged by operations -
  0/1 where 1 is acknowledged.
