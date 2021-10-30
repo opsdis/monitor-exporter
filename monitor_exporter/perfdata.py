@@ -30,6 +30,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 HOSTNAME = 'hostname'
 SERVICE = 'service'
 
+check_command_regex = re.compile(r'^.+?[^!\n]+')
 
 class Perfdata:
 
@@ -59,11 +60,9 @@ class Perfdata:
         if 'perf_data' in host_data:
             host_perf_data = host_data['perf_data']
         if 'check_command' in host_data:
-            host_check_command = host_data['check_command']
+            host_check_command = check_command_regex.search(host_data['check_command']).group()
 
         host_custom_vars_labels = self.prometheus_labels(custom_vars)
-
-        check_command_regex = re.compile(r'^.+?[^!\n]+')
 
         # Host state
         labels = {HOSTNAME: self.query_hostname}
@@ -72,6 +71,8 @@ class Perfdata:
         # Additional labels for downtime,
         if 'downtime' in host_data:
             labels['downtime'] = str(host_data['downtime']).lower()
+        if 'is_flapping' in host_data:
+            labels['flapping'] = str(host_data['is_flapping'])
         if 'address' in host_data:
             labels['address'] = host_data['address']
         if 'acknowledged' in host_data:
@@ -113,6 +114,8 @@ class Perfdata:
                 labels['downtime'] = str(item['downtime']).lower()
             if 'address' in host_data:
                 labels['address'] = host_data['address']
+            if 'is_flapping' in item:
+                labels['flapping'] = str(item['is_flapping'])
             if 'acknowledged' in item:
                 labels['acknowledged'] = str(item['acknowledged'])
 
