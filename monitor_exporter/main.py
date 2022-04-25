@@ -122,4 +122,3 @@ def start_scheduler(configuration):
         scheduler.add_job(monitorconnection.MonitorConfig().collect_cache, trigger='interval', args=[ttl],
                           seconds=seconds)
         scheduler.start()
-

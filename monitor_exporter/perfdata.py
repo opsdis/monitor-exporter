@@ -32,6 +32,7 @@ SERVICE = 'service'
 
 check_command_regex = re.compile(r'^.+?[^!\n]+')
 
+
 class Perfdata:
 
     def __init__(self, monitor: Monitor, query_hostname: str):
@@ -78,7 +79,7 @@ class Perfdata:
         if 'acknowledged' in host_data:
             labels['acknowledged'] = str(host_data['acknowledged'])
 
-        if host_state != None:
+        if host_state is not None:
             normilized_value, prometheus_key_with_labels = self.create_metric('host', labels,
                                                                               'state',
                                                                               {'value': int(host_state)})
