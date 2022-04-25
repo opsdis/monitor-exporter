@@ -202,7 +202,7 @@ class Perfdata:
         if 'warn' in value:
             perf_warn = value['warn']
         if 'crit' in value:
-            perf_crit = value['warn']
+            perf_crit = value['crit']
 
         return perf_unit, perf_value, perf_warn, perf_crit
 
