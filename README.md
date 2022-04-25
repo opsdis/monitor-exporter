@@ -316,7 +316,7 @@ Get metrics for a host where `target` is a host using the same `host_name` in Mo
     curl -s http://localhost:9631/metrics?target=foo.com
 
 # System requirements
-Python 3.6
+Python 3.8
 
 For required packages, please review `requirements.txt`
 
