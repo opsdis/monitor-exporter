@@ -33,7 +33,7 @@ class Singleton(type):
     """
     Provide singleton pattern to MonitorConfig. A new instance is only created if:
      - instance do not exists
-     - config is provide in constructor call, __init__
+     - config is provided in constructor call, __init__
     """
 
     _instances = {}

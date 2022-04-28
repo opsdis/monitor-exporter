@@ -97,7 +97,8 @@ class Perfdata:
                 if normalized_value != NAN or self.allow_nan:
                     self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
                 else:
-                    log.warn("Missing value - dropping", {'host':self.query_hostname, 'check_command': host_check_command})
+                    log.warn("Missing value - dropping",
+                             {'host': self.query_hostname, 'check_command': host_check_command})
 
         service_state_histo = {
             'bucket': {'0': 0, '1': 0, '2': 0, '+Inf': 0},
@@ -158,7 +159,9 @@ class Perfdata:
                     if normalized_value != NAN or self.allow_nan:
                         self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
                     else:
-                        log.warn("Missing value - dropping", {'host':self.query_hostname, 'service': item['description'], 'check_command': check_command})
+                        log.warn("Missing value - dropping",
+                                 {'host': self.query_hostname, 'service': item['description'],
+                                  'check_command': check_command})
         # self.create_service_state_histogram(service_state_histo, labels={HOSTNAME: self.query_hostname})
 
         return self.perfdatadict
