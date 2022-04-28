@@ -1,5 +1,5 @@
 import unittest
-#from unittest.mock import MagicMock
+# from unittest.mock import MagicMock
 from unittest import mock
 
 import os
@@ -9,6 +9,7 @@ import monitor_exporter.fileconfiguration as fileconfig
 import monitor_exporter.perfdata as perfdata
 
 import asyncio
+
 
 def get_perf_mock_file(*args, **kwargs):
     file = open(os.path.join('test_data', 'perfdata.json'), 'r')
@@ -36,7 +37,6 @@ class TestMonitor(unittest.TestCase):
 
         # Create Mock
         mcon.get_host_data = AsyncMock(return_value=get_perf_mock_file())
-
 
         perf = perfdata.Perfdata(mcon, 'google.se')
 

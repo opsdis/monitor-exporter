@@ -33,7 +33,7 @@ class Singleton(type):
     """
     Provide singleton pattern to MonitorConfig. A new instance is only created if:
      - instance do not exists
-     - config is provide in constructor call, __init__
+     - config is provided in constructor call, __init__
     """
 
     _instances = {}
@@ -80,6 +80,7 @@ class MonitorConfig(object, metaclass=Singleton):
         self.url_query_service_data = ''
         self.perfname_to_label = []
         self.allow_all_custom_vars = False
+        self.allow_nan = False
 
         if config:
             self.user = config[MonitorConfig.config_entry]['user']
@@ -95,6 +96,8 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.timeout = int(config[MonitorConfig.config_entry]['timeout'])
             if 'all_custom_vars' in config[MonitorConfig.config_entry]:
                 self.allow_all_custom_vars = bool(config[MonitorConfig.config_entry]['all_custom_vars'])
+            if 'allow_nan' in config[MonitorConfig.config_entry]:
+                self.allow_nan = bool(config[MonitorConfig.config_entry]['allow_nan'])
 
             # Collect service data for a single host
             self.url_query_service_data = self.host + \
@@ -149,6 +152,9 @@ class MonitorConfig(object, metaclass=Singleton):
     def is_all_custom_vars(self) -> bool:
         return self.allow_all_custom_vars
 
+    def is_allow_nan(self) -> bool:
+        return self.allow_nan
+
     def get_configured_labels(self):
         labeldict = {}
 
@@ -186,7 +192,7 @@ class MonitorConfig(object, metaclass=Singleton):
 
         try:
             data_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd),
-                                             verify=False, headers={'Content-Type': 'application/json'},
+                                             verify=False, headers=self.get_header(),
                                              timeout=self.timeout)
             data_from_monitor.raise_for_status()
 
@@ -206,15 +212,12 @@ class MonitorConfig(object, metaclass=Singleton):
 
     async def get(self, url):
 
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
-                                       verify_ssl=False,
-                                       headers={'Content-Type': 'application/json'}) as response:
-                    re = await response.text()
-                    return json.loads(re)
-        finally:
-            pass
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, auth=aiohttp.BasicAuth(self.user, self.passwd),
+                                   verify_ssl=False,
+                                   headers=self.get_header()) as response:
+                re = await response.text()
+                return json.loads(re)
 
     async def get_cache_service_data(self, hostname):
         r = self.get_cache_connection()
@@ -241,9 +244,10 @@ class MonitorConfig(object, metaclass=Singleton):
         :return:
         """
         try:
-            # get downtime
+            # Get downtime
             now = int(time.time())
             ongoing_downtime = set()
+            # Get the count to know how many to query
             count_downtimes = self.get_sync(self.url_downtime.format('count'))
             if 'count' in count_downtimes and int(count_downtimes['count']) > 0:
                 count = count_downtimes['count']
@@ -256,7 +260,7 @@ class MonitorConfig(object, metaclass=Singleton):
                         # downtime['id'] is an int -> make it to a str to compare in set
                         ongoing_downtime.add(downtime['id'])
 
-            # get the service data from Monitor
+            # Get the service data from Monitor
             start_time = time.time()
             count_services = self.get_sync(self.url_query_all_service_data.format('count'))
 
@@ -278,7 +282,7 @@ class MonitorConfig(object, metaclass=Singleton):
 
                     hosts_to_services[host_name].append(service_item)
 
-            # get the host data from Monitor
+            # Get the host data from Monitor
             count_hosts = self.get_sync(self.url_query_all_host.format('count'))
             hosts = []
             if 'count' in count_hosts:

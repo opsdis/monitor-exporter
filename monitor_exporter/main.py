@@ -65,7 +65,7 @@ def start():
     log.configure_logger(configuration)
 
     monitorconnection.MonitorConfig(configuration)
-    # Need to create a event loop for apscheduler
+    # Need to create an event loop for apscheduler
     loop = asyncio.new_event_loop()
     # Set the event loop
     asyncio.set_event_loop(loop)

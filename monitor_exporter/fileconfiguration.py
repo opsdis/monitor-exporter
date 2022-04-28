@@ -36,7 +36,7 @@ def read_config(config_file: str) -> dict:
     except (FileNotFoundError, IOError):
         print("Config file {} not found".format(config_file))
         exit(1)
-    except (yaml.YAMLError, yaml.MarkedYAMLError) as err:
+    except yaml.YAMLError as err:
         print("Error will reading config file - {}".format(err))
         exit(1)
 

@@ -23,12 +23,14 @@ import re
 import urllib3
 
 import monitor_exporter.monitorconnection as Monitor
+import monitor_exporter.log as log
 
 # Disable InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 HOSTNAME = 'hostname'
 SERVICE = 'service'
+NAN = 'NaN'
 
 check_command_regex = re.compile(r'^.+?[^!\n]+')
 
@@ -40,6 +42,7 @@ class Perfdata:
         self.monitor = monitor
         self.query_hostname = query_hostname
         self.prefix = monitor.get_prefix()
+        self.allow_nan = monitor.is_allow_nan()
         self.configured_labels = monitor.get_configured_labels()
         self.perfname_to_label = monitor.get_perfname_to_label()
         self.perfdatadict = {}
@@ -80,18 +83,22 @@ class Perfdata:
             labels['acknowledged'] = str(host_data['acknowledged'])
 
         if host_state is not None:
-            normilized_value, prometheus_key_with_labels = self.create_metric('host', labels,
+            normalized_value, prometheus_key_with_labels = self.create_metric('host', labels,
                                                                               'state',
                                                                               {'value': int(host_state)})
-            self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
+            self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
 
         if host_check_command and host_perf_data:
             labels.update({SERVICE: 'isalive'})
             for perf_data_key, perf_data_value in host_perf_data.items():
-                normilized_value, prometheus_key_with_labels = self.create_metric(host_check_command, labels,
-                                                                                  perf_data_key,
-                                                                                  perf_data_value)
-                self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
+                normalized_value, prometheus_key_with_labels = self.create_metric(host_check_command, labels,
+                                                                                  perf_data_key, perf_data_value)
+
+                if normalized_value != NAN or self.allow_nan:
+                    self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
+                else:
+                    log.warn("Missing value - dropping",
+                             {'host': self.query_hostname, 'check_command': host_check_command})
 
         service_state_histo = {
             'bucket': {'0': 0, '1': 0, '2': 0, '+Inf': 0},
@@ -122,9 +129,9 @@ class Perfdata:
 
             # For state if exists 0 OK, 1 Warning and 2 Critical
             if 'state' in item:
-                normilized_value, prometheus_key_with_labels = self.create_metric_state(check_command, labels,
+                normalized_value, prometheus_key_with_labels = self.create_metric_state(labels,
                                                                                         {'value': int(item['state'])})
-                self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
+                self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
 
                 if int(item['state']) == 0:
                     service_state_histo['bucket']['0'] += 1
@@ -144,11 +151,17 @@ class Perfdata:
                 # For each perfname in perfdata
                 for perf_data_key, perf_data_value in perfdata.items():
                     # get the value and unit
-                    normilized_value, prometheus_key_with_labels = self.create_metric(check_command, labels,
+
+                    normalized_value, prometheus_key_with_labels = self.create_metric(check_command, labels,
                                                                                       perf_data_key,
                                                                                       perf_data_value)
-                    self.perfdatadict.update({prometheus_key_with_labels: str(normilized_value)})
 
+                    if normalized_value != NAN or self.allow_nan:
+                        self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
+                    else:
+                        log.warn("Missing value - dropping",
+                                 {'host': self.query_hostname, 'service': item['description'],
+                                  'check_command': check_command})
         # self.create_service_state_histogram(service_state_histo, labels={HOSTNAME: self.query_hostname})
 
         return self.perfdatadict
@@ -180,15 +193,15 @@ class Perfdata:
         prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels, prometheus_key)
         return normilized_value, prometheus_key_with_labels
 
-    def create_metric_state(self, check_command, labels, state_value):
+    def create_metric_state(self, labels, state_value):
 
         perf_unit, perf_value, perf_warn, perf_crit = Perfdata.get_perfdata_value_unit(state_value)
 
-        normilized_value, unit = Perfdata.normalize_to_unit(perf_value, perf_unit)
+        normalized_value, unit = Perfdata.normalize_to_unit(perf_value, perf_unit)
         prometheus_key = self.prefix + 'service_state'
 
         prometheus_key_with_labels = Perfdata.concat_metrics_name_and_labels(labels, prometheus_key)
-        return normilized_value, prometheus_key_with_labels
+        return normalized_value, prometheus_key_with_labels
 
     @staticmethod
     def get_perfdata_value_unit(value: dict) -> tuple:
@@ -271,6 +284,8 @@ class Perfdata:
         byte-based units. Sadly, the Nagios-Plugins specification doesn't
         disambiguate base-1000 (KB) and base-1024 (KiB).
         """
+        if isinstance(value, str):
+            return NAN, ''
         if unit == '%':
             return value / 100, 'ratio'
         if unit == 's':

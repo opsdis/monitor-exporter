@@ -25,6 +25,10 @@ op5monitor:
   # Monitor password
   passwd: admin
 
+  # Allow for metrics value that are empty or a string. Will be replaced with NaN.
+  # Default is false and will drop metrics that is NaN
+  allow_nan: false
+
   # The prefix that will be set for all metrics
   metric_prefix: monitor
 
