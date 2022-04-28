@@ -9,3 +9,4 @@ config_my.yml
 dist/
 .coverage
 htmlcov/*
+sonar-scanner.sh
