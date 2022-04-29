@@ -22,6 +22,7 @@
 import logging
 import datetime
 from pythonjsonlogger import jsonlogger
+from quart.logging import serving_handler, default_handler
 
 logger = logging.getLogger('monitor-exporter')
 
@@ -35,6 +36,12 @@ def configure_logger(config):
         hdlr = logging.StreamHandler()
 
     formatter = CustomJsonFormatter('%(timestamp)s %(level)s %(name)s %(message)s')
+
+    # Set the quart log handlers
+    serving_handler.setFormatter(formatter)
+    serving_handler.setLevel(log_level)
+    default_handler.setFormatter(formatter)
+    default_handler.setLevel(log_level)
 
     hdlr.setFormatter(formatter)
     logger.addHandler(hdlr)
