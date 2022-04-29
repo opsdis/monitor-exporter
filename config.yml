@@ -1,5 +1,7 @@
-# Port can be overridden by using -p if running development flask
-#port: 9631
+# Port can be overridden by using -p if running development
+# This is the default port assigned at https://github.com/prometheus/prometheus/wiki/Default-port-allocations
+port: 9631
+
 cache:
   # Use redis for cache - future may support others
   # Values below is the default
@@ -24,6 +26,9 @@ op5monitor:
   user: administrator
   # Monitor password
   passwd: admin
+
+  # Verify ssl/tls connections, default false
+  verify: false
 
   # Allow for metrics value that are empty or a string. Will be replaced with NaN.
   # Default is false and will drop metrics that is NaN

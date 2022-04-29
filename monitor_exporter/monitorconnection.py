@@ -25,6 +25,7 @@ import aiohttp
 import redis
 import requests
 from requests.auth import HTTPBasicAuth
+from typing import Dict
 
 import monitor_exporter.log as log
 
@@ -94,6 +95,8 @@ class MonitorConfig(object, metaclass=Singleton):
                 self.perfname_to_label = config[MonitorConfig.config_entry]['perfnametolabel']
             if 'timeout' in config[MonitorConfig.config_entry]:
                 self.timeout = int(config[MonitorConfig.config_entry]['timeout'])
+            if 'verify' in config[MonitorConfig.config_entry]:
+                self.verify = bool(config[MonitorConfig.config_entry]['verify'])
             if 'all_custom_vars' in config[MonitorConfig.config_entry]:
                 self.allow_all_custom_vars = bool(config[MonitorConfig.config_entry]['all_custom_vars'])
             if 'allow_nan' in config[MonitorConfig.config_entry]:
@@ -128,25 +131,28 @@ class MonitorConfig(object, metaclass=Singleton):
                                 '/api/filter/{}?query=[downtimes]%20all' \
                                 '&columns=id,start_time,end_time,fixed'
 
-    def get_user(self):
+    def get_user(self) -> str:
         return self.user
 
-    def get_passwd(self):
+    def get_passwd(self) -> str:
         return self.passwd
 
-    def get_header(self):
+    def get_header(self) -> Dict[str, str]:
         return self.headers
 
-    def get_verify(self):
+    def get_verify(self) -> bool:
         return self.verify
 
-    def get_url(self):
+    def get_timeout(self) -> int:
+        return self.timeout
+
+    def get_url(self) -> str:
         return self.host
 
-    def number_of_retries(self):
+    def number_of_retries(self) -> int:
         return self.retries
 
-    def get_prefix(self):
+    def get_prefix(self) -> str:
         return self.prefix
 
     def is_all_custom_vars(self) -> bool:
@@ -192,8 +198,8 @@ class MonitorConfig(object, metaclass=Singleton):
 
         try:
             data_from_monitor = requests.get(url, auth=HTTPBasicAuth(self.user, self.passwd),
-                                             verify=False, headers=self.get_header(),
-                                             timeout=self.timeout)
+                                             verify=self.get_verify(), headers=self.get_header(),
+                                             timeout=self.get_timeout())
             data_from_monitor.raise_for_status()
 
             log.debug('API call: ' + data_from_monitor.url)
