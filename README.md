@@ -134,52 +134,10 @@ Which is bad since we get specific metric name from the perfname.
 
 # Configuration
 ## monitor-exporter
-All configuration is made in the config.yml file.
-
-Example:
-```yaml
-
-# Port can be overridden by using -p if running development flask
-# This is the default port assigned at https://github.com/prometheus/prometheus/wiki/Default-port-allocations
-#port: 9631
-
-op5monitor:
-  # The url to the Monitor server
-  url: https://monitor.example.com
-  user: monitor
-  passwd: monitor
-
-  # Allow for metrics value that are empty or a string. Will be replaced with NaN. 
-  # Default is false and will drop metrics that is NaN
-  allow_nan: false
-  
-  # The prefix for the metric names
-  metric_prefix: monitor
-  # Example of custom vars that should be added as labels and how to be translated
-  host_custom_vars:
-    # Specify which custom_vars to extract from Monitor
-    - env:
-        # Name of the label in Prometheus
-        label_name: environment
-    - site:
-        label_name: dc
-  # This section enable that for specific check commands the perfdata metrics name will not be part of the
-  # Prometheus metrics name, and is instead moved to a label
-  # E.g for the self_check_by_snmp_disk_usage_v3 command the perfdata name will be set to the label disk like:
-  # monitor_self_check_by_snmp_disk_usage_v3_bytes{hostname="monitor", service="Disk usage /", disk="/_used"}
-  perfnametolabel:
-    # The command name
-    self_check_by_snmp_disk_usage_v3:
-      label_name: disk
-logger:
-  # Path and name for the log file. If not set, send to stdout
-  logfile: /var/tmp/monitor-exporter.log
-  # Log level
-  level: INFO
-
-```
+All configuration is made in the `config.yml` file. Please see read thee file for all configuration options.  
 
 > When running with gunicorn the port is defined by gunicorn
+
 # Using Redis cache
 If you have a large Monitor configuration, the load of the Monitor server can get high when collecting host and service data over the api with a high rate.
 We strongly recommend that you instead collect host and service data in a batch and store it in a redis cache.
@@ -205,7 +163,7 @@ cache:
   # The time to live for the stored Monitor objects in the redis cache
   ttl: 300
 ```
-> Redis must installed on some host on the network and be accessible from the server running monitor-exporter
+> Redis must be installed on some host on the network and be accessible from the server running monitor-exporter
 
 # Logging
 The log stream is configure in the above config. If `logfile` is not set the logs will go to stdout.
