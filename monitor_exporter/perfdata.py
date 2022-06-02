@@ -33,6 +33,7 @@ SERVICE = 'service'
 NAN = 'NaN'
 
 check_command_regex = re.compile(r'^.+?[^!\n]+')
+metric_verify_regexp = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
 
 
 class Perfdata:
@@ -95,7 +96,12 @@ class Perfdata:
                                                                                   perf_data_key, perf_data_value)
 
                 if normalized_value != NAN or self.allow_nan:
-                    self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
+                    prometheus_key = prometheus_key_with_labels.split('{')[0]
+                    if metric_verify_regexp.match(prometheus_key):
+                        self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
+                    else:
+                        log.warn("Illegal prometheus key - dropping",
+                                 {'host': self.query_hostname, 'check_command': check_command, 'prometheus_key': prometheus_key})
                 else:
                     log.warn("Missing value - dropping",
                              {'host': self.query_hostname, 'check_command': host_check_command})
@@ -157,7 +163,13 @@ class Perfdata:
                                                                                       perf_data_value)
 
                     if normalized_value != NAN or self.allow_nan:
-                        self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
+                        prometheus_key = prometheus_key_with_labels.split('{')[0]
+                        if metric_verify_regexp.match(prometheus_key):
+                            self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
+                        else:
+                            log.warn("Illegal prometheus key - dropping",
+                                     {'host': self.query_hostname, 'service': item['description'],
+                                      'check_command': check_command, 'prometheus_key': prometheus_key})
                     else:
                         log.warn("Missing value - dropping",
                                  {'host': self.query_hostname, 'service': item['description'],
@@ -275,6 +287,16 @@ class Perfdata:
         prometheus_key = prometheus_key.replace('-', '_')
         prometheus_key = prometheus_key.replace('/', 'slash')
         prometheus_key = prometheus_key.replace('%', 'percent')
+        prometheus_key = prometheus_key.replace('#', 'hash')
+        prometheus_key = prometheus_key.replace('@', 'at')
+        prometheus_key = prometheus_key.replace('$', 'dollar')
+        prometheus_key = prometheus_key.replace('(', '_')
+        prometheus_key = prometheus_key.replace(')', '_')
+        prometheus_key = prometheus_key.replace('.', '_')
+        prometheus_key = prometheus_key.replace('[', '_')
+        prometheus_key = prometheus_key.replace(']', '_')
+        prometheus_key = prometheus_key.replace('\\', '_')
+        prometheus_key = prometheus_key.replace(':', '_')
         return prometheus_key
 
     @staticmethod
