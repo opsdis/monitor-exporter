@@ -101,7 +101,7 @@ class Perfdata:
                         self.perfdatadict.update({prometheus_key_with_labels: str(normalized_value)})
                     else:
                         log.warn("Illegal prometheus key - dropping",
-                                 {'host': self.query_hostname, 'check_command': check_command, 'prometheus_key': prometheus_key})
+                                 {'host': self.query_hostname, 'check_command': host_check_command, 'prometheus_key': prometheus_key})
                 else:
                     log.warn("Missing value - dropping",
                              {'host': self.query_hostname, 'check_command': host_check_command})
