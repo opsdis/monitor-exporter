@@ -241,7 +241,7 @@ scrape_configs:
 The switch -p enable setting of the port.
 
 ## Production deployment
-The are a number of ASGI containers that can be can use to deploy *monitor-exporter*. The dependency for these are not
+There are a number of ASGI containers that can be can use to deploy *monitor-exporter*. The dependency for these are not
 included in the distribution.
 
 ### Deploying with gunicorn
