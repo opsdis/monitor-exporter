@@ -1,6 +1,9 @@
 from os.path import dirname, join
 from setuptools import setup, find_packages
+from pathlib import Path
 
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
 def read(fname):
     return open(join(dirname(__file__), fname)).read()
@@ -29,4 +32,6 @@ setup(
     description='A Prometheus exporter for OP5 Monitor',
     install_requires=read('requirements.txt').split(),
     python_requires='>=3.6',
+    long_description=long_description,
+    long_description_content_type='text/markdown'
 )
